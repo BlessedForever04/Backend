@@ -42,7 +42,9 @@ public class Member {
         this.role = role;
     }
 
-
+    public void addTask(String taskId){
+        this.tasks.add(taskId);
+    }
 
     public String getId() {
         return id;

@@ -39,4 +39,9 @@ public class MemberService {
         }
         memberRepository.save(existingMember);
     }
+
+    public void addTask(String taskId, String memberId) {
+        Member tempMember = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("Member doesn't exist"));
+        tempMember.addTask(taskId);
+    }
 }
