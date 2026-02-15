@@ -37,7 +37,7 @@ public class TaskController {
 //    }
 
     // This is working but we dont want this shit
-    @PutMapping("add")
+    @PostMapping("add")
     public void addTask(@RequestBody Tasks task){
         taskService.addTask(task);
     }
