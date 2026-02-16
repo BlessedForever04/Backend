@@ -26,6 +26,11 @@ public class MemberController {
         return true;
     }
 
+    @PutMapping("{memberId}/addTask")
+    public void addTask(@RequestBody String taskId, @PathVariable String memberId ){
+        memberService.addTask(taskId, memberId);
+    }
+
     @GetMapping("id/{myId}")
     public ResponseEntity<Member> getMemberById(@PathVariable String myId){
        Member member = memberService.getMemberById(myId);

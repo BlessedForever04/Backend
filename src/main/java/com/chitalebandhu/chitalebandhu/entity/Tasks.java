@@ -9,6 +9,7 @@ public class Tasks {
     private String id;
     private String title;
     private String description;
+    private String priority;
     private String status;
     private String ownerId;
     private String remark;
@@ -57,4 +58,11 @@ public class Tasks {
         this.remark = remark;
     }
 
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
+    }
 }

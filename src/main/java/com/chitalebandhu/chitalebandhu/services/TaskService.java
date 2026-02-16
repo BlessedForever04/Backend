@@ -1,6 +1,9 @@
 package com.chitalebandhu.chitalebandhu.services;
 
+import com.chitalebandhu.chitalebandhu.entity.Member;
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
+import com.chitalebandhu.chitalebandhu.exceptions.ResourceNotFoundException;
+import com.chitalebandhu.chitalebandhu.repository.MemberRepository;
 import com.chitalebandhu.chitalebandhu.repository.TaskRepository;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -11,17 +14,22 @@ import java.util.List;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final MemberRepository memberRepository;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, MemberRepository memberRepository) {
         this.taskRepository = taskRepository;
+        this.memberRepository = memberRepository;
     }
 
     public List<Tasks> getAllTasks(){
         return taskRepository.findAll();
     }
 
-    public Tasks addTask(Tasks task){
-        return taskRepository.save(task);
+    public void addTask(Tasks task){
+        Tasks savedTask = taskRepository.save(task);
+        Member owner = memberRepository.findById(savedTask.getOwnerId()).orElseThrow(() -> new RuntimeException("Member not found"));
+        owner.addTask(savedTask.getId());
+        memberRepository.save(owner);
     }
 
     public Tasks getTaskById(String id){
