@@ -38,20 +38,43 @@ public class TaskService {
     }
 
     public List<Tasks> getTaskByOwner(String ownerId){
-        return taskRepository.findByOwnerId(ownerId);
+        Optional<List<Tasks>> tasks = taskRepository.findByOwnerId(ownerId);
+        return tasks.orElse(null);
     }
 
     public void deleteTaskById(String id){
         taskRepository.deleteById(id);
     }
 
-    public void updateTaskById(String id, @NonNull Tasks newTask){
-        Tasks existingTask = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
-        existingTask.setTitle(newTask.getTitle());
-        existingTask.setDescription(newTask.getDescription());
-        existingTask.setStatus(newTask.getStatus());
-        existingTask.setOwnerId(newTask.getOwnerId());
-        existingTask.setRemark(newTask.getRemark());
+    public Tasks updateTaskById(String id, Tasks newTask) {
+        Optional<Tasks> existingTask = taskRepository.findById(id);
+
+        if(existingTask.isEmpty()){
+            return null;
+        }
+
+        if (newTask.getTitle() != null && !newTask.getTitle().trim().isEmpty()) {
+            existingTask.get().setTitle(newTask.getTitle());
+        }
+
+        if (newTask.getDescription() != null && !newTask.getDescription().trim().isEmpty()) {
+            existingTask.get().setDescription(newTask.getDescription());
+        }
+
+        if (newTask.getStatus() != null) {
+            existingTask.get().setStatus(newTask.getStatus());
+        }
+
+        if (newTask.getOwnerId() != null) {
+            existingTask.get().setOwnerId(newTask.getOwnerId());
+        }
+
+        if (newTask.getRemark() != null) {
+            existingTask.get().setRemark(newTask.getRemark());
+        }
+
+      return taskRepository.save(existingTask.get());
     }
+
 
 }

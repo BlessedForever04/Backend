@@ -66,8 +66,10 @@ public class TaskController {
     }
 
     @PutMapping("update/{Id}")
-    public void updateTask(@PathVariable String Id, @RequestBody Tasks newTask){
-        taskService.updateTaskById(Id, newTask);
+    public ResponseEntity<Tasks> updateTask(@PathVariable String Id, @RequestBody Tasks newTask){
+       Tasks task =  taskService.updateTaskById(Id, newTask);
+       if(task != null) return new  ResponseEntity<>(task , HttpStatus.OK);
+       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("delete/{Id}")
