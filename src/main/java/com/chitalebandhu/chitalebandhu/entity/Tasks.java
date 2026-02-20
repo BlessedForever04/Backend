@@ -19,6 +19,8 @@ public class Tasks {
     private String remark;
     private LocalDate deadLine;
     private LocalDate startDate;
+    private int remainingTask;
+    private int completedTask;
     private List<String> subtasks;
 
     public String getId() {
@@ -111,5 +113,21 @@ public class Tasks {
 
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
+    }
+
+    public int getCompletedTask() {
+        return completedTask;
+    }
+
+    public void setCompletedTask(int completedTask) {
+        this.completedTask = completedTask;
+    }
+
+    public int getRemainingTask() {
+        return remainingTask;
+    }
+
+    public void setRemainingTask(int remainingTask) {
+        this.remainingTask = remainingTask;
     }
 }
