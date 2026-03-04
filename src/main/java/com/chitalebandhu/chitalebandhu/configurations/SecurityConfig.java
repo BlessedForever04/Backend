@@ -1,5 +1,6 @@
 package com.chitalebandhu.chitalebandhu.configurations;
 
+import com.chitalebandhu.chitalebandhu.Utility.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

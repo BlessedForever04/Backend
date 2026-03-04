@@ -1,9 +1,12 @@
 package com.chitalebandhu.chitalebandhu.controller;
 
 import com.chitalebandhu.chitalebandhu.DTOs.AuthRequest;
+import com.chitalebandhu.chitalebandhu.DTOs.AuthResponse;
+import com.chitalebandhu.chitalebandhu.DTOs.RefreshRequest;
 import com.chitalebandhu.chitalebandhu.Utility.JwtUtil;
 import com.chitalebandhu.chitalebandhu.entity.User;
 import com.chitalebandhu.chitalebandhu.repository.UserRepository;
+import com.chitalebandhu.chitalebandhu.services.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +29,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
     @PostMapping("/register")
     public User register(@RequestBody User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -33,13 +39,39 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody AuthRequest request){
+    public AuthResponse login(@RequestBody AuthRequest request){
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
                     request.getUserName(),
                     request.getPassword()
             )
         );
-        return jwtUtil.generateToken(request.getUserName());
+
+        User user = userRepository.findByUsername(request.getUserName()).get();
+
+        String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole());
+
+        String refreshToken = refreshTokenService.createRefreshToken(user.getUsername()).getToken();
+
+        return new AuthResponse(accessToken, refreshToken);
+    }
+
+    @PostMapping("/refresh")
+    public AuthResponse refresh(@RequestBody RefreshRequest request){
+        var token = refreshTokenService
+                .verifyExpiration(
+                        refreshTokenService.findByToken(request.getRefreshToken())
+                );
+
+        User user = userRepository.findById(token.getUser()).get();
+
+        String newAccessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole());
+
+        return new AuthResponse(newAccessToken, token.getToken());
+    }
+
+    @PostMapping("/logout")
+    public void logout(@RequestBody RefreshRequest request){
+        refreshTokenService.findByToken(request.getRefreshToken()).getUser();
     }
 }

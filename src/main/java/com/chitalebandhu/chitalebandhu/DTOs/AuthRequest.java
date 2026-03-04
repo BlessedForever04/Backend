@@ -3,6 +3,7 @@ package com.chitalebandhu.chitalebandhu.DTOs;
 public class AuthRequest {
     private String userName;
     private String password;
+    private String role;
 
     public String getPassword() {
         return password;
@@ -18,5 +19,13 @@ public class AuthRequest {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }
