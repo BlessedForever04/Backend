@@ -13,7 +13,7 @@ public class Tasks {
     private String description;
     private String priority;
     private String type; // Here type we assign as PROJECT / TASK
-    private String status; // NOT_STARTED / TODO / DONE / OVERDUE
+    private String status; // NOT_STARTED / IN_PROGRESS / DONE / OVERDUE
     private String ownerId;
     private String parentTaskId;
     private short progress; // out of 100 (it'll be represented as percentage)

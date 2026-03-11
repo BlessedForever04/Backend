@@ -26,8 +26,8 @@ public class JwtSecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/user/**").hasRole("USER")
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/user/**").hasAuthority("USER")
                         .anyRequest().authenticated()
                 );
 
