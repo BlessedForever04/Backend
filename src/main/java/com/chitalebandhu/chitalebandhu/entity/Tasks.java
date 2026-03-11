@@ -12,16 +12,22 @@ public class Tasks {
     private String title;
     private String description;
     private String priority;
-    private String status;
+    private String type; // Here type we assign as PROJECT / TASK
+    private String status; // NOT_STARTED / IN_PROGRESS / DONE / OVERDUE
     private String ownerId;
-    private String teamId;
     private String parentTaskId;
+    private short progress; // out of 100 (it'll be represented as percentage)
     private String remark;
     private LocalDate deadLine;
     private LocalDate startDate;
     private int remainingTask;
     private int completedTask;
-    private List<String> subtasks;
+
+    // A task is a project if it has multiple sub-tasks
+    // A task is a task if it has no sub-tasks
+    // ,but we now have Type field in tasks entity so its no longer a confusion
+
+    // If we add sub-tasks in task, then that task is project
 
     public String getId() {
         return id;
@@ -83,22 +89,6 @@ public class Tasks {
         this.deadLine = deadLine;
     }
 
-    public List<String> getSubtasks() {
-        return subtasks;
-    }
-
-    public void setSubtasks(List<String> subtasks) {
-        this.subtasks = subtasks;
-    }
-
-    public String getTeamId() {
-        return teamId;
-    }
-
-    public void setTeamId(String teamId) {
-        this.teamId = teamId;
-    }
-
     public String getParentTaskId() {
         return parentTaskId;
     }
@@ -129,5 +119,21 @@ public class Tasks {
 
     public void setRemainingTask(int remainingTask) {
         this.remainingTask = remainingTask;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public short getProgress() {
+        return progress;
+    }
+
+    public void setProgress(short progress) {
+        this.progress = progress;
     }
 }

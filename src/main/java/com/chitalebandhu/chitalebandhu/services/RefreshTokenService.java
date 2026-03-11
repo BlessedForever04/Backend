@@ -36,4 +36,8 @@ public class RefreshTokenService {
         return refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Refresh token not found"));
     }
+
+    public void deleteToken(RefreshToken token) {
+        refreshTokenRepository.delete(token);
+    }
 }

@@ -4,6 +4,7 @@ import com.chitalebandhu.chitalebandhu.DTOs.AuthRequest;
 import com.chitalebandhu.chitalebandhu.DTOs.AuthResponse;
 import com.chitalebandhu.chitalebandhu.DTOs.RefreshRequest;
 import com.chitalebandhu.chitalebandhu.Utility.JwtUtil;
+import com.chitalebandhu.chitalebandhu.entity.RefreshToken;
 import com.chitalebandhu.chitalebandhu.entity.User;
 import com.chitalebandhu.chitalebandhu.repository.UserRepository;
 import com.chitalebandhu.chitalebandhu.services.RefreshTokenService;
@@ -13,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -72,6 +74,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public void logout(@RequestBody RefreshRequest request){
-        refreshTokenService.findByToken(request.getRefreshToken()).getUser();
+        RefreshToken token = refreshTokenService.findByToken(request.getRefreshToken());
+        refreshTokenService.deleteToken(token);
     }
 }

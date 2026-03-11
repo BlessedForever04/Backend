@@ -3,6 +3,7 @@ package com.chitalebandhu.chitalebandhu.services;
 import com.chitalebandhu.chitalebandhu.entity.Member;
 import com.chitalebandhu.chitalebandhu.exceptions.ResourceNotFoundException;
 import com.chitalebandhu.chitalebandhu.repository.MemberRepository;
+import com.chitalebandhu.chitalebandhu.repository.TaskRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
@@ -16,18 +17,31 @@ public class MemberService {
 
     @Autowired
     private MemberRepository memberRepository;
+    @Autowired
+    private TaskRepository taskRepository;
 
     public void addMember(Member member){
         memberRepository.save(member);
     }
+
     public List<Member> getAllMembers(){
         return memberRepository.findAll();
     }
+
     public Member getMemberById(String myId){
         return memberRepository.findById(myId).orElseThrow(() -> new ResourceNotFoundException("Member not found with id: " + myId));
     }
+
     public void deleteMemberById(String myId){
         memberRepository.deleteById(myId);
+    }
+
+    public long getProjectCount(String ownerId){
+        return taskRepository.countByOwnerId(ownerId);
+    }
+
+    public long getStatusCount(String ownerId, String status){
+        return taskRepository.countByOwnerIdAndStatus(ownerId, status);
     }
 
     public Member updateMemberById(String myId, Member newMember){

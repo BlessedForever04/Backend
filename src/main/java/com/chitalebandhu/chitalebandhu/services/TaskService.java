@@ -16,10 +16,6 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public List<Tasks> getAllTasks(){
-        return taskRepository.findAll();
-    }
-
     public void addTask(Tasks task){
         Tasks savedTask = taskRepository.save(task);
     }
@@ -68,5 +64,16 @@ public class TaskService {
       return taskRepository.save(existingTask.get());
     }
 
+    public long getTaskCountByParentTaskIdAndStatus(String parentTaskId, String status){
+        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, status);
+    }
 
+    public long getAllTaskCountByType(String type){
+        return taskRepository.countByType(type);
+    }
+
+    public List<Tasks> getAllTasksByType(String type){
+        Optional <List<Tasks>> allProjects = taskRepository.findByType(type);
+        return allProjects.orElse(null);
+    }
 }

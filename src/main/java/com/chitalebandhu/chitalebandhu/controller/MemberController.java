@@ -2,6 +2,7 @@ package com.chitalebandhu.chitalebandhu.controller;
 
 import com.chitalebandhu.chitalebandhu.entity.Member;
 import com.chitalebandhu.chitalebandhu.services.MemberService;
+import com.chitalebandhu.chitalebandhu.services.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,8 @@ public class MemberController {
 
     @Autowired
     private MemberService memberService;
+    @Autowired
+    private TaskService taskService;
 
     @GetMapping("all")
     public List<Member> getAllMembers(){
@@ -24,6 +27,16 @@ public class MemberController {
     public boolean addMember(@RequestBody Member member){
         memberService.addMember(member);
         return true;
+    }
+
+    @GetMapping("taskCount/{ownerId}")
+    public long getProjectCount(@PathVariable String ownerId){
+        return memberService.getProjectCount(ownerId);
+    }
+
+    @GetMapping("{ownerId}/projects/{status}/count")
+    public long getCountByStatus(@PathVariable String ownerId, @PathVariable String status){
+        return memberService.getStatusCount(ownerId, status);
     }
 
     @GetMapping("id/{myId}")
