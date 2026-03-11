@@ -16,10 +16,6 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public List<Tasks> getAllTasks(){
-        return taskRepository.findAll();
-    }
-
     public void addTask(Tasks task){
         Tasks savedTask = taskRepository.save(task);
     }
@@ -68,5 +64,39 @@ public class TaskService {
       return taskRepository.save(existingTask.get());
     }
 
+
+    public long getTaskCountOfStatusNotStarted(String parentTaskId){
+        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "DONE");
+    }
+
+    public long getTaskCountOfStatusTodo(String parentTaskId){
+        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "TODO");
+    }
+
+    public long getTaskCountOfStatusDone(String parentTaskId){
+        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "NOT_STARTED");
+    }
+
+    public long getTaskCountOfStatusOverDue(String parentTaskId){
+        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "OVERDUE");
+    }
+
+    public long getAllTaskCount(){
+        return taskRepository.countByType("TASK");
+    }
+
+    public long getAllProjectCount(){
+        return taskRepository.countByType("PROJECT");
+    }
+
+    public List<Tasks> getAllProjects(){
+        Optional <List<Tasks>> allProjects = taskRepository.findByType("PROJECT");
+        return allProjects.orElse(null);
+    }
+
+    public List<Tasks> getAllTasks(){
+        Optional <List<Tasks>> allTasks = taskRepository.findByType("TASK");
+        return allTasks.orElse(null);
+    }
 
 }

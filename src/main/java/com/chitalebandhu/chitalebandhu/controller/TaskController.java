@@ -76,4 +76,35 @@ public class TaskController {
     public void deleteTask(@PathVariable String Id){
         taskService.deleteTaskById(Id);
     }
+
+    @GetMapping("getAllProjectCount")
+    public long getAllProjectCount(){
+        return taskService.getAllProjectCount();
+    }
+
+    @GetMapping("getAllTaskCount")
+    public long getAllTaskCount(){
+        return taskService.getAllTaskCount();
+    }
+
+    @GetMapping("getTaskCountOfStatusNotStarted/{parentTaskId}")
+    public long getTaskCountOfStatusNotStarted(@PathVariable String parentTaskId){
+        return taskService.getTaskCountOfStatusNotStarted(parentTaskId);
+    }
+
+    @GetMapping("getTaskCountOfStatusTodo/{parentTaskId}")
+    public long getTaskCountOfStatusTodo(@PathVariable String parentTaskId){
+        return taskService.getTaskCountOfStatusTodo(parentTaskId);
+    }
+
+    @GetMapping("getTaskCountOfStatusDone/{parentTaskId}")
+    public long getTaskCountOfStatusDone(@PathVariable String parentTaskId){
+        return taskService.getTaskCountOfStatusDone(parentTaskId);
+    }
+
+    @GetMapping("getTaskCountOfStatusOverDue/{parentTaskId}")
+    public long getTaskCountOfStatusOverDue(@PathVariable String parentTaskId){
+        return taskService.getTaskCountOfStatusOverDue(parentTaskId);
+    }
+
 }
