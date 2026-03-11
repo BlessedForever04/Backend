@@ -1,47 +1,26 @@
 package com.chitalebandhu.chitalebandhu.controller;
 
-import com.chitalebandhu.chitalebandhu.DTOs.TaskDTO;
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
 import com.chitalebandhu.chitalebandhu.services.TaskService;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.Option;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("tasks")
 public class TaskController {
 
     private final TaskService taskService;
-    private final ModelMapper modelMapper;
 
-    public TaskController(TaskService taskService, ModelMapper modelMapper) {
+    public TaskController(TaskService taskService) {
         this.taskService = taskService;
-        this.modelMapper = modelMapper;
     }
 
-    @GetMapping("AllTasks")
-    public List<Tasks> getAllTasks(){
-        return taskService.getAllTasks();
-    }
+    @GetMapping("allTasks/{type}")
+    public List<Tasks> getAllProject(@PathVariable String type){return taskService.getAllTasksByType(type);}
 
-    @GetMapping("AllProjects")
-    public List<Tasks> getAllProject(){return taskService.getAllProjects();}
-
-    // I dont know why its nont working, have to fix this
-//    @PutMapping("add")
-//    public ResponseEntity <TaskDTO> addTask(@RequestBody Tasks task){
-//        Tasks savedTask = taskService.addTask(task);
-//        TaskDTO taskDto = modelMapper.map(savedTask, TaskDTO.class);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(taskDto);
-//    }
-
-    // This is working but we dont want this shit
     @PostMapping("add")
     public void addTask(@RequestBody Tasks task){
         taskService.addTask(task);
@@ -79,34 +58,13 @@ public class TaskController {
         taskService.deleteTaskById(Id);
     }
 
-    @GetMapping("ProjectCount")
-    public long getAllProjectCount(){
-        return taskService.getAllProjectCount();
+    @GetMapping("TaskCount/{type}")
+    public long getAllTaskCount(@PathVariable String type){
+        return taskService.getAllTaskCountByType(type);
     }
 
-    @GetMapping("TaskCount")
-    public long getAllTaskCount(){
-        return taskService.getAllTaskCount();
+    @GetMapping("TodoCount/{parentTaskId}/{status}")
+    public long getCountTodo(@PathVariable String parentTaskId, @PathVariable String status){
+        return taskService.getTaskCountByParentTaskIdAndStatus(parentTaskId, status);
     }
-
-    @GetMapping("NotStarted/{parentTaskId}")
-    public long getCountNotStarted(@PathVariable String parentTaskId){
-        return taskService.getCountNotStarted(parentTaskId);
-    }
-
-    @GetMapping("TodoCount/{parentTaskId}")
-    public long getCountTodo(@PathVariable String parentTaskId){
-        return taskService.getCountTodo(parentTaskId);
-    }
-
-    @GetMapping("DoneCount/{parentTaskId}")
-    public long getCountDone(@PathVariable String parentTaskId){
-        return taskService.getCountDone(parentTaskId);
-    }
-
-    @GetMapping("OverDueCount/{parentTaskId}")
-    public long getCountOverDue(@PathVariable String parentTaskId){
-        return taskService.getCountOverDue(parentTaskId);
-    }
-
 }

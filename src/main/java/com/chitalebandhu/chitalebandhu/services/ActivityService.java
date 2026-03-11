@@ -28,7 +28,6 @@ public class ActivityService {
         if(existingActivity.isEmpty()){
             return null;
         }
-
         if(newActivity.getUserName() != null && !newActivity.getUserName().trim().isEmpty()){
             existingActivity.get().setUserName(newActivity.getUserName());
         }
@@ -39,13 +38,13 @@ public class ActivityService {
             existingActivity.get().setVerb(newActivity.getVerb());
         }
         if(newActivity.getTime() != null){
-            existingActivity.get().setTime(newActivity.getTime());
+            existingActivity.get().setTime();
         }
 
         return activityRepository.save(existingActivity.get());
     }
 
     public List<Activity> getAllActivities(){
-        return activityRepository.findAll();
+        return activityRepository.findAllByOrderByTimeDesc();
     }
 }
