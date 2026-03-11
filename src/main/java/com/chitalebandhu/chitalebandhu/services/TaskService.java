@@ -65,19 +65,19 @@ public class TaskService {
     }
 
 
-    public long getTaskCountOfStatusNotStarted(String parentTaskId){
+    public long getCountNotStarted(String parentTaskId){
         return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "DONE");
     }
 
-    public long getTaskCountOfStatusTodo(String parentTaskId){
+    public long getCountTodo(String parentTaskId){
         return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "TODO");
     }
 
-    public long getTaskCountOfStatusDone(String parentTaskId){
+    public long getCountDone(String parentTaskId){
         return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "NOT_STARTED");
     }
 
-    public long getTaskCountOfStatusOverDue(String parentTaskId){
+    public long getCountOverDue(String parentTaskId){
         return taskRepository.countByParentTaskIdAndStatus(parentTaskId, "OVERDUE");
     }
 

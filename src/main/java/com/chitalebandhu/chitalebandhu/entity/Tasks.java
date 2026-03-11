@@ -16,14 +16,16 @@ public class Tasks {
     private String status; // NOT_STARTED / TODO / DONE / OVERDUE
     private String ownerId;
     private String parentTaskId;
+    private short progress; // out of 100 (it'll be represented as percentage)
     private String remark;
     private LocalDate deadLine;
     private LocalDate startDate;
     private int remainingTask;
     private int completedTask;
 
-    // A project is a task if it has multiple sub-tasks
+    // A task is a project if it has multiple sub-tasks
     // A task is a task if it has no sub-tasks
+    // ,but we now have Type field in tasks entity so its no longer a confusion
 
     // If we add sub-tasks in task, then that task is project
 
@@ -125,5 +127,13 @@ public class Tasks {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public short getProgress() {
+        return progress;
+    }
+
+    public void setProgress(short progress) {
+        this.progress = progress;
     }
 }

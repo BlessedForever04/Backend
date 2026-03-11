@@ -79,34 +79,34 @@ public class TaskController {
         taskService.deleteTaskById(Id);
     }
 
-    @GetMapping("getAllProjectCount")
+    @GetMapping("ProjectCount")
     public long getAllProjectCount(){
         return taskService.getAllProjectCount();
     }
 
-    @GetMapping("getAllTaskCount")
+    @GetMapping("TaskCount")
     public long getAllTaskCount(){
         return taskService.getAllTaskCount();
     }
 
-    @GetMapping("getTaskCountOfStatusNotStarted/{parentTaskId}")
-    public long getTaskCountOfStatusNotStarted(@PathVariable String parentTaskId){
-        return taskService.getTaskCountOfStatusNotStarted(parentTaskId);
+    @GetMapping("NotStarted/{parentTaskId}")
+    public long getCountNotStarted(@PathVariable String parentTaskId){
+        return taskService.getCountNotStarted(parentTaskId);
     }
 
-    @GetMapping("getTaskCountOfStatusTodo/{parentTaskId}")
-    public long getTaskCountOfStatusTodo(@PathVariable String parentTaskId){
-        return taskService.getTaskCountOfStatusTodo(parentTaskId);
+    @GetMapping("TodoCount/{parentTaskId}")
+    public long getCountTodo(@PathVariable String parentTaskId){
+        return taskService.getCountTodo(parentTaskId);
     }
 
-    @GetMapping("getTaskCountOfStatusDone/{parentTaskId}")
-    public long getTaskCountOfStatusDone(@PathVariable String parentTaskId){
-        return taskService.getTaskCountOfStatusDone(parentTaskId);
+    @GetMapping("DoneCount/{parentTaskId}")
+    public long getCountDone(@PathVariable String parentTaskId){
+        return taskService.getCountDone(parentTaskId);
     }
 
-    @GetMapping("getTaskCountOfStatusOverDue/{parentTaskId}")
-    public long getTaskCountOfStatusOverDue(@PathVariable String parentTaskId){
-        return taskService.getTaskCountOfStatusOverDue(parentTaskId);
+    @GetMapping("OverDueCount/{parentTaskId}")
+    public long getCountOverDue(@PathVariable String parentTaskId){
+        return taskService.getCountOverDue(parentTaskId);
     }
 
 }
