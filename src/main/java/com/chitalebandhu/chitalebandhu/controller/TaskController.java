@@ -25,11 +25,13 @@ public class TaskController {
         this.modelMapper = modelMapper;
     }
 
-    // This is just for testing, we dont need this is production
     @GetMapping("AllTasks")
     public List<Tasks> getAllTasks(){
         return taskService.getAllTasks();
     }
+
+    @GetMapping("AllProjects")
+    public List<Tasks> getAllProject(){return taskService.getAllProjects();}
 
     // I dont know why its nont working, have to fix this
 //    @PutMapping("add")
