@@ -13,6 +13,8 @@ public interface TaskRepository extends MongoRepository<Tasks, String> {
 
     long countByType(String type);
 
+    long countByPriority(String priority);
+
     Optional <List<Tasks>> findByType(String Type);
 
     long countByOwnerIdAndType(String ownerId, String type);

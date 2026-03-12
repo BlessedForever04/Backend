@@ -25,6 +25,10 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Task not found"));
     }
 
+    public long getCountByPriority(String priority){
+        return taskRepository.countByPriority(priority);
+    }
+
     public List<Tasks> getTaskByOwner(String ownerId){
         Optional<List<Tasks>> tasks = taskRepository.findByOwnerId(ownerId);
         return tasks.orElse(null);
@@ -66,6 +70,12 @@ public class TaskService {
 
     public long getTaskCountByParentTaskIdAndStatus(String parentTaskId, String status){
         return taskRepository.countByParentTaskIdAndStatus(parentTaskId, status);
+    }
+
+    public void updateStatusById(String id, String status){
+        Optional<Tasks> exisitingTask = taskRepository.findById(id);
+        exisitingTask.get().setStatus(status);
+        taskRepository.save(exisitingTask.get());
     }
 
     public long getAllTaskCountByType(String type){

@@ -44,7 +44,7 @@ public class ActivityService {
         return activityRepository.save(existingActivity.get());
     }
 
-    public List<Activity> getAllActivities(){
-        return activityRepository.findAllByOrderByTimeDesc();
+    public List<Activity> getActivities(List<String> TaskId, String visibility){
+        return activityRepository.findByProjectIdAndVisibilityInOrderByTimeDesc(TaskId, visibility);
     }
 }

@@ -40,6 +40,10 @@ public class MemberService {
         return taskRepository.countByOwnerIdAndType(ownerId, type);
     }
 
+    public long getMemberCount(){
+        return taskRepository.count();
+    }
+
     public long getStatusCount(String ownerId, String status){
         return taskRepository.countByOwnerIdAndStatus(ownerId, status);
     }

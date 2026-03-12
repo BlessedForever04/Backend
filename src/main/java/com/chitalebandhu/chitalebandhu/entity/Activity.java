@@ -10,10 +10,12 @@ import java.time.LocalDateTime;
 public class Activity {
     @Id
     private String id;
+    private String projectId;
     private String userName; // Ram, sham
     private String verb; // created, started, completed, deleted, submitted review
     private String projectName; // Improving the marketing strategy
     private LocalDateTime time;
+    private String visibility; // Set visibility as Task / Project - Tasks with Visibility as Task will only be seen by team leader and visibility with Project will be seen by admin only
     // final activity = Ram created Improving the marketing strategy - 2 hours/days/months ago
 
     public String getUserName() {
@@ -46,5 +48,21 @@ public class Activity {
 
     public void setTime() {
         this.time = LocalDateTime.now();
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
     }
 }

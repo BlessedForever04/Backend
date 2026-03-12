@@ -19,6 +19,11 @@ public class TaskController {
         this.taskService = taskService;
     }
 
+    @GetMapping("count/{priority}")
+    public long getCountByPriority(@PathVariable String priority){
+        return taskService.getCountByPriority(priority);
+    }
+
     @GetMapping("allTasks/{type}")
     public List<Tasks> getAllProject(@PathVariable String type){return taskService.getAllTasksByType(type);}
 
@@ -57,6 +62,11 @@ public class TaskController {
     @DeleteMapping("delete/{Id}")
     public void deleteTask(@PathVariable String Id){
         taskService.deleteTaskById(Id);
+    }
+
+    @PutMapping("{id}/status/update/{status}")
+    public void updateStatus(@PathVariable String id, @PathVariable String status){
+        taskService.updateStatusById(String id, String status);
     }
 
     @GetMapping("TaskCount/{type}")

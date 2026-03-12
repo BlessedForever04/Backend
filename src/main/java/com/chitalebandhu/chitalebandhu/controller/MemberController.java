@@ -29,6 +29,11 @@ public class MemberController {
         return true;
     }
 
+    @GetMapping("count")
+    public long getMemberCount(){
+        return memberService.getMemberCount();
+    }
+
     @GetMapping("count/{type}/{ownerId}")
     public long getProjectCount(@PathVariable String ownerId, @PathVariable String type){
         return memberService.getProjectCount(ownerId, type);
