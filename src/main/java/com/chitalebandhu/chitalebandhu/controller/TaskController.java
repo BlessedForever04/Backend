@@ -66,7 +66,7 @@ public class TaskController {
 
     @PutMapping("{id}/status/update/{status}")
     public void updateStatus(@PathVariable String id, @PathVariable String status){
-        taskService.updateStatusById(String id, String status);
+        taskService.updateStatusById(id, status);
     }
 
     @GetMapping("TaskCount/{type}")

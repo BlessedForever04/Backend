@@ -1,7 +1,6 @@
 package com.chitalebandhu.chitalebandhu.services;
 
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
-import com.chitalebandhu.chitalebandhu.repository.MemberRepository;
 import com.chitalebandhu.chitalebandhu.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -73,9 +72,14 @@ public class TaskService {
     }
 
     public void updateStatusById(String id, String status){
-        Optional<Tasks> exisitingTask = taskRepository.findById(id);
-        exisitingTask.get().setStatus(status);
-        taskRepository.save(exisitingTask.get());
+        Optional<Tasks> existingTask = taskRepository.findById(id);
+        if(existingTask.isPresent()){
+            existingTask.get().setStatus(status);
+        }
+        else{
+            return;
+        }
+        taskRepository.save(existingTask.get());
     }
 
     public long getAllTaskCountByType(String type){
