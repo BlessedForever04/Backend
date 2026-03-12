@@ -29,9 +29,9 @@ public class MemberController {
         return true;
     }
 
-    @GetMapping("taskCount/{ownerId}")
-    public long getProjectCount(@PathVariable String ownerId){
-        return memberService.getProjectCount(ownerId);
+    @GetMapping("count/{type}/{ownerId}")
+    public long getProjectCount(@PathVariable String ownerId, @PathVariable String type){
+        return memberService.getProjectCount(ownerId, type);
     }
 
     @GetMapping("{ownerId}/projects/{status}/count")

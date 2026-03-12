@@ -36,8 +36,8 @@ public class MemberService {
         memberRepository.deleteById(myId);
     }
 
-    public long getProjectCount(String ownerId){
-        return taskRepository.countByOwnerId(ownerId);
+    public long getProjectCount(String ownerId, String type){
+        return taskRepository.countByOwnerIdAndType(ownerId, type);
     }
 
     public long getStatusCount(String ownerId, String status){
