@@ -20,7 +20,8 @@ public class ActivityController {
         this.taskService = taskService;
     }
 
-    public List<Activity> getActivities(String ownerId, String visibility){
+    @GetMapping("{ownerId}/{visibility}")
+    public List<Activity> getActivities(@PathVariable String ownerId, @PathVariable String visibility){
         List <Tasks> tasks = taskService.getTaskByOwner(ownerId);
         List<String> taskId = tasks
                 .stream()
@@ -28,6 +29,11 @@ public class ActivityController {
                 .toList();
 
         return activityService.getActivities(taskId, visibility);
+    }
+
+    @GetMapping("adminActivities")
+    public List<Activity> getAdminActivities(){
+        return activityService.getAdminActivities("PROJECT");
     }
 
     @PostMapping("add")

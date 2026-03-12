@@ -19,6 +19,10 @@ public class ActivityService {
         activityRepository.save(newActivity);
     }
 
+    public List<Activity> getAdminActivities(String visibility){
+        return activityRepository.findByVisibilityOrderByTimeDesc(visibility);
+    }
+
     public void removeActivity(String id){
         activityRepository.deleteById(id);
     }
@@ -45,6 +49,6 @@ public class ActivityService {
     }
 
     public List<Activity> getActivities(List<String> TaskId, String visibility){
-        return activityRepository.findByProjectIdAndVisibilityInOrderByTimeDesc(TaskId, visibility);
+        return activityRepository.findByProjectIdInAndVisibilityOrderByTimeDesc(TaskId, visibility);
     }
 }

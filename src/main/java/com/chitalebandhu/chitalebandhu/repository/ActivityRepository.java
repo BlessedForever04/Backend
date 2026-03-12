@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface ActivityRepository extends MongoRepository<Activity, String> {
     List<Activity> findAllByOrderByTimeDesc();
-    List<Activity> findByProjectIdAndVisibilityInOrderByTimeDesc(List<String> projectIds, String visibility);
+    List<Activity> findByVisibilityOrderByTimeDesc(String visibility);
+    List<Activity> findByProjectIdInAndVisibilityOrderByTimeDesc(List<String> projectIds, String visibility);
 }
