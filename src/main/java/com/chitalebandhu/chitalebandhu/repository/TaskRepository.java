@@ -8,8 +8,11 @@ import java.util.Optional;
 
 public interface TaskRepository extends MongoRepository<Tasks, String> {
     Optional<List<Tasks>> findByOwnerId(String ownerId);
+    List<Tasks> findByParentTaskId(String parentTaskId);
 
     long countByParentTaskIdAndStatus(String parentTaskId, String Status);
+    long countByParentTaskId(String parentTaskId);
+    long countByParentTaskIdAndStatusIn(String parentTaskId, List<String> statuses);
 
     long countByType(String type);
 

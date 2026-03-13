@@ -1,13 +1,19 @@
 package com.chitalebandhu.chitalebandhu.services;
 
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
+import com.chitalebandhu.chitalebandhu.exceptions.ResourceNotFoundException;
 import com.chitalebandhu.chitalebandhu.repository.TaskRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class TaskService {
+
+    private static final List<String> DONE_STATUSES = Arrays.asList("DONE", "COMPLETED");
 
     private final TaskRepository taskRepository;
 
@@ -16,7 +22,12 @@ public class TaskService {
     }
 
     public void addTask(Tasks task){
-        Tasks savedTask = taskRepository.save(task);
+        validateTaskForCreateOrUpdate(task);
+        taskRepository.save(task);
+
+        if (task.getParentTaskId() != null && !task.getParentTaskId().trim().isEmpty()) {
+            recalculateProjectStats(task.getParentTaskId());
+        }
     }
 
     public Tasks getTaskById(String id){
@@ -30,11 +41,30 @@ public class TaskService {
 
     public List<Tasks> getTaskByOwner(String ownerId){
         Optional<List<Tasks>> tasks = taskRepository.findByOwnerId(ownerId);
-        return tasks.orElse(null);
+        return tasks.orElse(List.of());
     }
 
     public void deleteTaskById(String id){
-        taskRepository.deleteById(id);
+        Tasks existing = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+
+        final String existingType = normalize(existing.getType());
+        final String parentTaskId = existing.getParentTaskId();
+
+        if ("PROJECT".equals(existingType)) {
+            List<Tasks> children = taskRepository.findByParentTaskId(existing.getId());
+            if (!children.isEmpty()) {
+                taskRepository.deleteAll(children);
+            }
+            taskRepository.delete(existing);
+            return;
+        }
+
+        taskRepository.delete(existing);
+
+        if (parentTaskId != null && !parentTaskId.trim().isEmpty()) {
+            recalculateProjectStats(parentTaskId);
+        }
     }
 
     public Tasks updateTaskById(String id, Tasks newTask) {
@@ -44,27 +74,67 @@ public class TaskService {
             return null;
         }
 
+        final Tasks task = existingTask.get();
+        final String oldParentTaskId = task.getParentTaskId();
+
         if (newTask.getTitle() != null && !newTask.getTitle().trim().isEmpty()) {
-            existingTask.get().setTitle(newTask.getTitle());
+            task.setTitle(newTask.getTitle());
         }
 
         if (newTask.getDescription() != null && !newTask.getDescription().trim().isEmpty()) {
-            existingTask.get().setDescription(newTask.getDescription());
+            task.setDescription(newTask.getDescription());
         }
 
         if (newTask.getStatus() != null && !newTask.getStatus().trim().isEmpty()) {
-            existingTask.get().setStatus(newTask.getStatus());
+            task.setStatus(newTask.getStatus());
         }
 
         if (newTask.getOwnerId() != null && !newTask.getOwnerId().trim().isEmpty()) {
-            existingTask.get().setOwnerId(newTask.getOwnerId());
+            task.setOwnerId(newTask.getOwnerId());
         }
 
         if (newTask.getRemark() != null && !newTask.getRemark().trim().isEmpty()) {
-            existingTask.get().setRemark(newTask.getRemark());
+            task.setRemark(newTask.getRemark());
         }
 
-      return taskRepository.save(existingTask.get());
+        if (newTask.getPriority() != null && !newTask.getPriority().trim().isEmpty()) {
+            task.setPriority(newTask.getPriority());
+        }
+
+        if (newTask.getType() != null && !newTask.getType().trim().isEmpty()) {
+            task.setType(newTask.getType());
+        }
+
+        if (newTask.getParentTaskId() != null) {
+            task.setParentTaskId(newTask.getParentTaskId());
+        }
+
+        if (newTask.getDeadline() != null) {
+            task.setDeadline(newTask.getDeadline());
+        }
+
+        if (newTask.getStartDate() != null) {
+            task.setStartDate(newTask.getStartDate());
+        }
+
+        if (newTask.getProgress() > 0) {
+            task.setProgress(newTask.getProgress());
+        }
+
+        validateTaskForCreateOrUpdate(task);
+
+        final Tasks saved = taskRepository.save(task);
+
+        final String newParentTaskId = saved.getParentTaskId();
+        if (oldParentTaskId != null && !oldParentTaskId.trim().isEmpty()) {
+            recalculateProjectStats(oldParentTaskId);
+        }
+        if (newParentTaskId != null && !newParentTaskId.trim().isEmpty()
+                && !newParentTaskId.equals(oldParentTaskId)) {
+            recalculateProjectStats(newParentTaskId);
+        }
+
+      return saved;
     }
 
     public long getTaskCountByParentTaskIdAndStatus(String parentTaskId, String status){
@@ -79,7 +149,10 @@ public class TaskService {
         else{
             return;
         }
-        taskRepository.save(existingTask.get());
+        Tasks saved = taskRepository.save(existingTask.get());
+        if (saved.getParentTaskId() != null && !saved.getParentTaskId().trim().isEmpty()) {
+            recalculateProjectStats(saved.getParentTaskId());
+        }
     }
 
     public long getAllTaskCountByType(String type){
@@ -88,6 +161,74 @@ public class TaskService {
 
     public List<Tasks> getAllTasksByType(String type){
         Optional <List<Tasks>> allProjects = taskRepository.findByType(type);
-        return allProjects.orElse(null);
+        return allProjects.orElse(List.of());
+    }
+
+    private void validateTaskForCreateOrUpdate(Tasks task) {
+        final String type = normalize(task.getType());
+        if (type.isEmpty()) {
+            throw new IllegalStateException("Task type is required (PROJECT or TASK)");
+        }
+
+        task.setType(type);
+
+        if ("TASK".equals(type)) {
+            if (task.getParentTaskId() == null || task.getParentTaskId().trim().isEmpty()) {
+                throw new IllegalStateException("TASK must have a valid parent project id");
+            }
+
+            Tasks parent = taskRepository.findById(task.getParentTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent project not found with id: " + task.getParentTaskId()));
+
+            if (!"PROJECT".equals(normalize(parent.getType()))) {
+                throw new IllegalStateException("Parent task must be of type PROJECT");
+            }
+        }
+
+        if ("PROJECT".equals(type)) {
+            task.setParentTaskId(null);
+        }
+
+        if (task.getStatus() == null || task.getStatus().trim().isEmpty()) {
+            task.setStatus("NOT_STARTED");
+        } else {
+            task.setStatus(normalize(task.getStatus()));
+        }
+    }
+
+    private void recalculateProjectStats(String projectId) {
+        if (projectId == null || projectId.trim().isEmpty()) {
+            return;
+        }
+
+        Optional<Tasks> projectOpt = taskRepository.findById(projectId);
+        if (projectOpt.isEmpty()) {
+            return;
+        }
+
+        Tasks project = projectOpt.get();
+        if (!"PROJECT".equals(normalize(project.getType()))) {
+            return;
+        }
+
+        long total = taskRepository.countByParentTaskId(projectId);
+        long completed = taskRepository.countByParentTaskIdAndStatusIn(projectId, DONE_STATUSES);
+        long remaining = Math.max(0, total - completed);
+
+        project.setCompletedTask((int) completed);
+        project.setRemainingTask((int) remaining);
+
+        if (total > 0) {
+            short progress = (short) Math.round((completed * 100.0) / total);
+            project.setProgress(progress);
+        } else {
+            project.setProgress((short) 0);
+        }
+
+        taskRepository.save(project);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toUpperCase();
     }
 }
