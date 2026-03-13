@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 @Service
 public class TaskService {
@@ -48,17 +50,9 @@ public class TaskService {
         Tasks existing = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
 
-        final String existingType = normalize(existing.getType());
         final String parentTaskId = existing.getParentTaskId();
 
-        if ("PROJECT".equals(existingType)) {
-            List<Tasks> children = taskRepository.findByParentTaskId(existing.getId());
-            if (!children.isEmpty()) {
-                taskRepository.deleteAll(children);
-            }
-            taskRepository.delete(existing);
-            return;
-        }
+        deleteDescendantsByParentId(existing.getId());
 
         taskRepository.delete(existing);
 
@@ -226,6 +220,35 @@ public class TaskService {
         }
 
         taskRepository.save(project);
+    }
+
+    private void deleteDescendantsByParentId(String rootParentId) {
+        if (rootParentId == null || rootParentId.trim().isEmpty()) {
+            return;
+        }
+
+        Deque<String> queue = new ArrayDeque<>();
+        List<Tasks> toDelete = new ArrayList<>();
+        queue.add(rootParentId);
+
+        while (!queue.isEmpty()) {
+            String parentId = queue.removeFirst();
+            List<Tasks> children = taskRepository.findByParentTaskId(parentId);
+            if (children.isEmpty()) {
+                continue;
+            }
+
+            toDelete.addAll(children);
+            for (Tasks child : children) {
+                if (child.getId() != null && !child.getId().trim().isEmpty()) {
+                    queue.add(child.getId());
+                }
+            }
+        }
+
+        if (!toDelete.isEmpty()) {
+            taskRepository.deleteAll(toDelete);
+        }
     }
 
     private String normalize(String value) {
