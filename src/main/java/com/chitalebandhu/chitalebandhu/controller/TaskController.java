@@ -71,6 +71,23 @@ public class TaskController {
         taskService.updateStatusById(id, status);
     }
 
+    @PutMapping("{id}/status/transition/{status}")
+    public ResponseEntity<Tasks> transitionStatus(
+            @PathVariable String id,
+            @PathVariable String status,
+            @RequestParam String actorId,
+            @RequestParam(defaultValue = "USER") String actorRole
+    ) {
+        try {
+            Tasks updated = taskService.transitionTaskStatusWithReview(id, status, actorId, actorRole);
+            return new ResponseEntity<>(updated, HttpStatus.OK);
+        } catch (IllegalStateException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @GetMapping("TaskCount/{type}")
     public long getAllTaskCount(@PathVariable String type){
         return taskService.getAllTaskCountByType(type);

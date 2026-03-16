@@ -157,6 +157,63 @@ public class TaskService {
         }
     }
 
+    public Tasks transitionTaskStatusWithReview(String id, String status, String actorId, String actorRole) {
+        Tasks task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+
+        final String nextStatus = normalize(status);
+        final String currentStatus = normalize(task.getStatus());
+        final String role = normalize(actorRole);
+        final boolean isAdmin = "ADMIN".equals(role);
+
+        if (nextStatus.isEmpty()) {
+            throw new IllegalStateException("Status is required");
+        }
+
+        // Task owner can only move to REVIEW. It cannot self-complete to DONE.
+        if ("REVIEW".equals(nextStatus)) {
+            if (!isAdmin && (actorId == null || actorId.trim().isEmpty() || !actorId.equals(task.getOwnerId()))) {
+                throw new IllegalStateException("Only task owner can submit task for review");
+            }
+
+            if (DONE_STATUSES.contains(currentStatus)) {
+                throw new IllegalStateException("Completed tasks cannot be moved back to review");
+            }
+
+            task.setStatus("REVIEW");
+        } else if (DONE_STATUSES.contains(nextStatus)) {
+            // Completion is allowed only from REVIEW and only by project owner or admin.
+            if (!"REVIEW".equals(currentStatus)) {
+                throw new IllegalStateException("Task must be in REVIEW before marking DONE");
+            }
+
+            if (!isAdmin) {
+                String parentTaskId = task.getParentTaskId();
+                if (parentTaskId == null || parentTaskId.trim().isEmpty()) {
+                    throw new IllegalStateException("Task is missing parent project");
+                }
+
+                Tasks project = taskRepository.findById(parentTaskId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Parent project not found with id: " + parentTaskId));
+
+                if (actorId == null || actorId.trim().isEmpty() || !actorId.equals(project.getOwnerId())) {
+                    throw new IllegalStateException("Only project owner can approve task completion");
+                }
+            }
+
+            task.setStatus("DONE");
+        } else {
+            throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW or DONE.");
+        }
+
+        Tasks saved = taskRepository.save(task);
+        if (saved.getParentTaskId() != null && !saved.getParentTaskId().trim().isEmpty()) {
+            recalculateProjectStats(saved.getParentTaskId());
+        }
+
+        return saved;
+    }
+
     public long getAllTaskCountByType(String type){
         return taskRepository.countByType(type);
     }
@@ -217,7 +274,8 @@ public class TaskService {
         }
 
         if ("PROJECT".equals(type)) {
-            task.setParentTaskId(null);
+            // A PROJECT may or may not have parentTaskId (for nested project flows).
+            // Keep parentTaskId as-is and only normalize contribution fields.
             task.setContributionPercent(0);
         }
 
