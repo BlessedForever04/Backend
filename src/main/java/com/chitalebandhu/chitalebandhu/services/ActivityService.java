@@ -19,6 +19,14 @@ public class ActivityService {
         activityRepository.save(newActivity);
     }
 
+    public List<Activity> getAllActivities(){
+        return activityRepository.findAllByOrderByTimeDesc();
+    }
+
+    public List<Activity> getAdminActivities(String visibility){
+        return activityRepository.findByVisibilityOrderByTimeDesc(visibility);
+    }
+
     public void removeActivity(String id){
         activityRepository.deleteById(id);
     }
@@ -44,7 +52,7 @@ public class ActivityService {
         return activityRepository.save(existingActivity.get());
     }
 
-    public List<Activity> getAllActivities(){
-        return activityRepository.findAllByOrderByTimeDesc();
+    public List<Activity> getActivities(List<String> TaskId, String visibility){
+        return activityRepository.findByProjectIdInAndVisibilityOrderByTimeDesc(TaskId, visibility);
     }
 }

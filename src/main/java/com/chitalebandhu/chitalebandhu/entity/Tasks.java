@@ -1,5 +1,7 @@
 package com.chitalebandhu.chitalebandhu.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
@@ -17,17 +19,14 @@ public class Tasks {
     private String ownerId;
     private String parentTaskId;
     private short progress; // out of 100 (it'll be represented as percentage)
+    @JsonProperty("contributionPercent")
+    @JsonAlias({"contribution", "contribution_percentage"})
+    private int contributionPercent;
     private String remark;
     private LocalDate deadLine;
     private LocalDate startDate;
     private int remainingTask;
     private int completedTask;
-
-    // A task is a project if it has multiple sub-tasks
-    // A task is a task if it has no sub-tasks
-    // ,but we now have Type field in tasks entity so its no longer a confusion
-
-    // If we add sub-tasks in task, then that task is project
 
     public String getId() {
         return id;
@@ -135,5 +134,13 @@ public class Tasks {
 
     public void setProgress(short progress) {
         this.progress = progress;
+    }
+
+    public int getContributionPercent() {
+        return contributionPercent;
+    }
+
+    public void setContributionPercent(int contributionPercent) {
+        this.contributionPercent = contributionPercent;
     }
 }

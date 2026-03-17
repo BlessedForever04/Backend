@@ -2,6 +2,7 @@ package com.chitalebandhu.chitalebandhu.controller;
 
 import com.chitalebandhu.chitalebandhu.DTOs.AuthRequest;
 import com.chitalebandhu.chitalebandhu.DTOs.AuthResponse;
+import com.chitalebandhu.chitalebandhu.DTOs.ChangePasswordRequest;
 import com.chitalebandhu.chitalebandhu.DTOs.RefreshRequest;
 import com.chitalebandhu.chitalebandhu.Utility.JwtUtil;
 import com.chitalebandhu.chitalebandhu.entity.RefreshToken;
@@ -9,6 +10,8 @@ import com.chitalebandhu.chitalebandhu.entity.User;
 import com.chitalebandhu.chitalebandhu.repository.UserRepository;
 import com.chitalebandhu.chitalebandhu.services.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -76,5 +79,30 @@ public class AuthController {
     public void logout(@RequestBody RefreshRequest request){
         RefreshToken token = refreshTokenService.findByToken(request.getRefreshToken());
         refreshTokenService.deleteToken(token);
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest request) {
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()
+                || request.getOldPassword() == null || request.getOldPassword().trim().isEmpty()
+                || request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+            return new ResponseEntity<>("All fields are required", HttpStatus.BAD_REQUEST);
+        }
+
+        var userOpt = userRepository.findByUsername(request.getUsername());
+        if (userOpt.isEmpty()) {
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+        }
+
+        User user = userOpt.get();
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            return new ResponseEntity<>("Current password is incorrect", HttpStatus.FORBIDDEN);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return new ResponseEntity<>("Password changed successfully", HttpStatus.OK);
     }
 }

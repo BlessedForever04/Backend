@@ -1,14 +1,20 @@
 package com.chitalebandhu.chitalebandhu.services;
 
 import com.chitalebandhu.chitalebandhu.entity.Member;
+import com.chitalebandhu.chitalebandhu.entity.Tasks;
 import com.chitalebandhu.chitalebandhu.exceptions.ResourceNotFoundException;
 import com.chitalebandhu.chitalebandhu.repository.MemberRepository;
 import com.chitalebandhu.chitalebandhu.repository.TaskRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,7 +31,12 @@ public class MemberService {
     }
 
     public List<Member> getAllMembers(){
-        return memberRepository.findAll();
+        return memberRepository.findByRoleIgnoreCase("USER");
+    }
+
+    public Page<Member> getAllMembersPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
+        return memberRepository.findByRoleIgnoreCase("USER", pageable);
     }
 
     public Member getMemberById(String myId){
@@ -33,11 +44,51 @@ public class MemberService {
     }
 
     public void deleteMemberById(String myId){
+        Member existingMember = memberRepository.findById(myId)
+            .orElseThrow(() -> new ResourceNotFoundException("Member not found with id: " + myId));
+
+        List<Tasks> ownedItems = taskRepository.findByOwnerId(myId).orElse(List.of());
+
+        long activeProjects = ownedItems.stream()
+            .filter(t -> "PROJECT".equalsIgnoreCase(safe(t.getType())))
+            .filter(t -> !isDoneStatus(t.getStatus()))
+            .count();
+
+        if (activeProjects > 0) {
+            throw new IllegalStateException(
+                "Cannot delete member \"" + existingMember.getName() +
+                    "\". They are assigned to " + activeProjects + " incomplete project(s)."
+            );
+        }
+
+        long activeTasks = ownedItems.stream()
+            .filter(t -> "TASK".equalsIgnoreCase(safe(t.getType())))
+            .filter(t -> !isDoneStatus(t.getStatus()))
+            .count();
+
+        if (activeTasks > 0) {
+            throw new IllegalStateException(
+                "Cannot delete member \"" + existingMember.getName() +
+                    "\". They still have " + activeTasks + " incomplete task(s)."
+            );
+        }
+
+        // Keep historical tasks/projects but remove dangling owner reference.
+        if (!ownedItems.isEmpty()) {
+            List<Tasks> cleaned = new ArrayList<>(ownedItems);
+            cleaned.forEach(t -> t.setOwnerId(""));
+            taskRepository.saveAll(cleaned);
+        }
+
         memberRepository.deleteById(myId);
     }
 
-    public long getProjectCount(String ownerId){
-        return taskRepository.countByOwnerId(ownerId);
+    public long getProjectCount(String ownerId, String type){
+        return taskRepository.countByOwnerIdAndType(ownerId, type);
+    }
+
+    public long getMemberCount(){
+        return memberRepository.count();
     }
 
     public long getStatusCount(String ownerId, String status){
@@ -68,5 +119,14 @@ public class MemberService {
         }
 
         return memberRepository.save(existingMember.get());
+    }
+
+    private boolean isDoneStatus(String status) {
+        String value = safe(status).toUpperCase();
+        return "DONE".equals(value) || "COMPLETED".equals(value);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
     }
 }
