@@ -257,7 +257,6 @@ public class TaskService {
         Optional <List<Tasks>> allProjects = taskRepository.findByType(type);
         return allProjects.orElse(List.of());
     }
-
     // Pagination methods
     public Page<Tasks> getAllTasksByTypePaginated(String type, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
