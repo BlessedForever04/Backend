@@ -13,6 +13,7 @@ public class Tasks {
     private String id;
     private String title;
     private String description;
+    private String category;
     private String priority;
     // When we add subtasks within a task (not project) we convert that task type into project so the owner of that task will now see that task in his project dashboard
     // This causes on issue, as type == PROJECT now, admin will see it in his dashboard too which we dont want, because this task is project for task owner but still a task within a project
@@ -155,5 +156,13 @@ public class Tasks {
 
     public void setRootType(String rootType) {
         this.rootType = rootType;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }
