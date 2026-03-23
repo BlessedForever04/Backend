@@ -24,10 +24,12 @@ public class Tasks {
     private String status; // NOT_STARTED / IN_PROGRESS / DONE / OVERDUE
     private String ownerId;
     private String parentTaskId;
+    private short level;
     private short progress; // out of 100 (it'll be represented as percentage)
     @JsonProperty("contributionPercent")
     @JsonAlias({"contribution", "contribution_percentage"})
     private int contributionPercent;
+    private int criticalDays;
     private String remark;
     private LocalDate deadLine;
     private LocalDate startDate;
@@ -164,5 +166,21 @@ public class Tasks {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public int getCriticalDays() {
+        return criticalDays;
+    }
+
+    public void setCriticalDays(int criticalDays) {
+        this.criticalDays = criticalDays;
+    }
+
+    public short getLevel() {
+        return level;
+    }
+
+    public void setLevel(short level) {
+        this.level = level;
     }
 }
