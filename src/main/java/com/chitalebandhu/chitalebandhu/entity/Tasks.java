@@ -19,7 +19,7 @@ public class Tasks {
     // This causes on issue, as type == PROJECT now, admin will see it in his dashboard too which we dont want, because this task is project for task owner but still a task within a project
     // To avoid this, we can manage 2 types, type == PROJECT will be used to show this task in the owner's project dashboard
     // And we'll use rootType, we'll declare rootType = PROJECT when we create project, rootType = TASK when we create task, and it'll never change, so admin will fetch only main projects
-    private String rootType;
+    private boolean isProject;
     private String type; // Here type we assign as PROJECT / TASK
     private String status; // NOT_STARTED / IN_PROGRESS / DONE / OVERDUE
     private String ownerId;
@@ -162,13 +162,8 @@ public class Tasks {
         this.contributionPercent = contributionPercent;
     }
 
-    public String getRootType() {
-        return rootType;
-    }
 
-    public void setRootType(String rootType) {
-        this.rootType = rootType;
-    }
+
 
     public String getCategory() {
         return category;
@@ -192,5 +187,13 @@ public class Tasks {
 
     public void setLevel(short level) {
         this.level = level;
+    }
+
+    public boolean isProject() {
+        return isProject;
+    }
+
+    public void setProject(boolean project) {
+        isProject = project;
     }
 }
