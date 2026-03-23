@@ -189,11 +189,11 @@ public class Tasks {
         this.level = level;
     }
 
-    public boolean isProject() {
+    public boolean getIsProject() {
         return isProject;
     }
 
-    public void setProject(boolean project) {
+    public void setIsProject(boolean project) {
         isProject = project;
     }
 }

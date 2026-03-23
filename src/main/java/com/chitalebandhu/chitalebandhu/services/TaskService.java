@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.messaging.Task;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public class TaskService {
     }
 
     public void addTask(Tasks task){
-        validateTaskForCreateOrUpdate(task);
+      //  validateTaskForCreateOrUpdate(task);
         taskRepository.save(task);
 
         if (task.getParentTaskId() != null && !task.getParentTaskId().trim().isEmpty()) {
@@ -89,12 +90,19 @@ public class TaskService {
         return null;
     }
 
+    public void toggleType(String id){
+        Optional<Tasks> existingTask = taskRepository.findById(id);
+        existingTask.get().setIsProject(true);
+        taskRepository.save(existingTask.get());
+    }
+
     public Tasks updateTaskById(String id, Tasks newTask) {
         Optional<Tasks> existingTask = taskRepository.findById(id);
 
         if(existingTask.isEmpty()){
             return null;
         }
+
 
         final Tasks task = existingTask.get();
         final String oldParentTaskId = task.getParentTaskId();
@@ -118,6 +126,8 @@ public class TaskService {
         if (newTask.getOwnerId() != null && !newTask.getOwnerId().trim().isEmpty()) {
             task.setOwnerId(newTask.getOwnerId());
         }
+
+        task.setCriticalDays(newTask.getCriticalDays());
 
         if (newTask.getRemark() != null && !newTask.getRemark().trim().isEmpty()) {
             task.setRemark(newTask.getRemark());
@@ -151,7 +161,7 @@ public class TaskService {
             task.setContributionPercent(newTask.getContributionPercent());
         }
 
-        validateTaskForCreateOrUpdate(task);
+      //  validateTaskForCreateOrUpdate(task);
 
         final Tasks saved = taskRepository.save(task);
 
@@ -263,67 +273,67 @@ public class TaskService {
         return taskRepository.findByType(type, pageable);
     }
 
-    public Page<Tasks> getAllTasksByRootTypePaginated(String rootType, int page, int size){
-        Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
-        return taskRepository.findByRootType(rootType, pageable);
-    }
+//    public Page<Tasks> getAllTasksByRootTypePaginated(String rootType, int page, int size){
+//        Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
+//        return taskRepository.findByRootType(rootType, pageable);
+//    }
 
     public Page<Tasks> getTaskByOwnerPaginated(String ownerId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
         return taskRepository.findByOwnerId(ownerId, pageable);
     }
 
-    private void validateTaskForCreateOrUpdate(Tasks task) {
-        final String type = normalize(task.getType());
-        if (type.isEmpty()) {
-            throw new IllegalStateException("Task type is required (PROJECT or TASK)");
-        }
-
-        task.setType(type);
-
-        if ("TASK".equals(type)) {
-            if (task.getParentTaskId() == null || task.getParentTaskId().trim().isEmpty()) {
-                throw new IllegalStateException("TASK must have a valid parent project id");
-            }
-
-            Tasks parent = taskRepository.findById(task.getParentTaskId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Parent project not found with id: " + task.getParentTaskId()));
-
-            if (!"PROJECT".equals(normalize(parent.getType()))) {
-                throw new IllegalStateException("Parent task must be of type PROJECT");
-            }
-
-            int contribution = task.getContributionPercent();
-            if (contribution < 0 || contribution > 100) {
-                throw new IllegalStateException("Task contribution must be between 1 and 100 percent");
-            }
-
-            List<Tasks> siblings = taskRepository.findByParentTaskId(task.getParentTaskId());
-            int assignedContribution = siblings.stream()
-                    .filter(existing -> task.getId() == null || !task.getId().equals(existing.getId()))
-                    .mapToInt(Tasks::getContributionPercent)
-                    .sum();
-
-            if (assignedContribution + contribution > 100) {
-                throw new IllegalStateException(
-                        "Task contribution exceeds the remaining project percentage. Remaining: "
-                                + Math.max(0, 100 - assignedContribution) + "%"
-                );
-            }
-        }
-
-        if ("PROJECT".equals(type)) {
-            // A PROJECT may or may not have parentTaskId (for nested project flows).
-            // Keep parentTaskId as-is and only normalize contribution fields.
-            task.setContributionPercent(0);
-        }
-
-        if (task.getStatus() == null || task.getStatus().trim().isEmpty()) {
-            task.setStatus("NOT_STARTED");
-        } else {
-            task.setStatus(normalize(task.getStatus()));
-        }
-    }
+//    private void validateTaskForCreateOrUpdate(Tasks task) {
+//        final String type = normalize(task.getType());
+//        if (type.isEmpty()) {
+//            throw new IllegalStateException("Task type is required (PROJECT or TASK)");
+//        }
+//
+//        task.setType(type);
+//
+//        if ("TASK".equals(type)) {
+//            if (task.getParentTaskId() == null || task.getParentTaskId().trim().isEmpty()) {
+//                throw new IllegalStateException("TASK must have a valid parent project id");
+//            }
+//
+//            Tasks parent = taskRepository.findById(task.getParentTaskId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Parent project not found with id: " + task.getParentTaskId()));
+//
+//            if (!"PROJECT".equals(normalize(parent.getType()))) {
+//                throw new IllegalStateException("Parent task must be of type PROJECT");
+//            }
+//
+//            int contribution = task.getContributionPercent();
+//            if (contribution < 0 || contribution > 100) {
+//                throw new IllegalStateException("Task contribution must be between 1 and 100 percent");
+//            }
+//
+//            List<Tasks> siblings = taskRepository.findByParentTaskId(task.getParentTaskId());
+//            int assignedContribution = siblings.stream()
+//                    .filter(existing -> task.getId() == null || !task.getId().equals(existing.getId()))
+//                    .mapToInt(Tasks::getContributionPercent)
+//                    .sum();
+//
+//            if (assignedContribution + contribution > 100) {
+//                throw new IllegalStateException(
+//                        "Task contribution exceeds the remaining project percentage. Remaining: "
+//                                + Math.max(0, 100 - assignedContribution) + "%"
+//                );
+//            }
+//        }
+//
+//        if ("PROJECT".equals(type)) {
+//            // A PROJECT may or may not have parentTaskId (for nested project flows).
+//            // Keep parentTaskId as-is and only normalize contribution fields.
+//            task.setContributionPercent(0);
+//        }
+//
+//        if (task.getStatus() == null || task.getStatus().trim().isEmpty()) {
+//            task.setStatus("NOT_STARTED");
+//        } else {
+//            task.setStatus(normalize(task.getStatus()));
+//        }
+//    }
 
     private void recalculateProjectStats(String projectId) {
         if (projectId == null || projectId.trim().isEmpty()) {

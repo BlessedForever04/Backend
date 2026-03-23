@@ -36,7 +36,9 @@ public class TaskController {
 
     @PostMapping("add")
     public void addTask(@RequestBody Tasks task){
-
+        if(task.getParentTaskId() != null){
+            taskService.toggleType(task.getParentTaskId());
+        }
         taskService.addTask(task);
     }
 
@@ -71,6 +73,18 @@ public class TaskController {
             Tasks task = taskService.updateTaskById(Id, newTask);
             if(task != null) return new ResponseEntity<>(task , HttpStatus.OK);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (IllegalStateException e) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("updateType/{Id}")
+    public ResponseEntity<Tasks> updateTaskType(@PathVariable String Id){
+        try {
+            taskService.toggleType(Id);
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (IllegalStateException e) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } catch (Exception e) {
@@ -136,16 +150,16 @@ public class TaskController {
         }
     }
 
-    @GetMapping("paginated/{rootType}")
-    public ResponseEntity<PagedResponse<Tasks>> getTasksByRootType(@PathVariable String rootType, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        try {
-            Page<Tasks> tasksPage = taskService.getAllTasksByRootTypePaginated(rootType, page, size);
-            return new ResponseEntity<>(new PagedResponse<>(tasksPage), HttpStatus.OK);
-        }
-        catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-    }
+//    @GetMapping("paginated/{rootType}")
+//    public ResponseEntity<PagedResponse<Tasks>> getTasksByRootType(@PathVariable String rootType, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+//        try {
+//            Page<Tasks> tasksPage = taskService.getAllTasksByRootTypePaginated(rootType, page, size);
+//            return new ResponseEntity<>(new PagedResponse<>(tasksPage), HttpStatus.OK);
+//        }
+//        catch (Exception e) {
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+//    }
 
     @GetMapping("paginated/owner/{ownerId}")
     public ResponseEntity<PagedResponse<Tasks>> getTasksByOwnerPaginated(
