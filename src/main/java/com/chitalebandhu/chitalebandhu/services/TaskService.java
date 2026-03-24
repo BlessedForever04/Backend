@@ -396,8 +396,13 @@ public class TaskService {
     public void addColaboratedProject(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
-            existingTask.get().addCollaboratedProjects(projectId);
-            taskRepository.save(existingTask.get());
+            if(!existingTask.get().getCollaboratedProjects().contains(projectId)){
+                existingTask.get().addCollaboratedProjects(projectId);
+                taskRepository.save(existingTask.get());
+            }
+            else{
+                throw new RuntimeException("You have already collaborated with this project");
+            }
         }
         else{
             throw new RuntimeException("Task / Project doesn't exist");
