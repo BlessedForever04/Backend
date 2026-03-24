@@ -393,7 +393,7 @@ public class TaskService {
         }
     }
 
-    public void addColaboratedProject(String id, String projectId){
+    public void addCollaboratedProject(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
             if(!existingTask.get().getCollaboratedProjects().contains(projectId)){

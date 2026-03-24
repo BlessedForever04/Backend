@@ -165,7 +165,7 @@ public class TaskController {
 
     @PostMapping("collaboratedProject/add/{id}")
     public void addCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
-        taskService.addColaboratedProject(id, projectId);
+        taskService.addCollaboratedProject(id, projectId);
     }
 
 
@@ -197,17 +197,6 @@ public class TaskController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-
-//    @GetMapping("paginated/{rootType}")
-//    public ResponseEntity<PagedResponse<Tasks>> getTasksByRootType(@PathVariable String rootType, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-//        try {
-//            Page<Tasks> tasksPage = taskService.getAllTasksByRootTypePaginated(rootType, page, size);
-//            return new ResponseEntity<>(new PagedResponse<>(tasksPage), HttpStatus.OK);
-//        }
-//        catch (Exception e) {
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//        }
-//    }
 
     @GetMapping("paginated/owner/{ownerId}")
     public ResponseEntity<PagedResponse<Tasks>> getTasksByOwnerPaginated(

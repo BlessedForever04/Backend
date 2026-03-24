@@ -51,14 +51,13 @@ public class AuthController {
                     request.getPassword()
             )
         );
-
-        User user = userRepository.findByUsername(request.getUsername()).get();
-
-        String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole());
-
-        String refreshToken = refreshTokenService.createRefreshToken(user.getUsername()).getToken();
-
-        return new AuthResponse(accessToken, refreshToken, user.getRole());
+        if(userRepository.findByUsername(request.getUsername()).isPresent()){
+            User user = userRepository.findByUsername(request.getUsername()).get();
+            String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole());
+            String refreshToken = refreshTokenService.createRefreshToken(user.getUsername()).getToken();
+            return new AuthResponse(accessToken, refreshToken, user.getRole());
+        }
+        return null;
     }
 
     @PostMapping("/refresh")
@@ -68,11 +67,16 @@ public class AuthController {
                         refreshTokenService.findByToken(request.getRefreshToken())
                 );
 
-        User user = userRepository.findById(token.getUser()).get();
 
+
+        if(userRepository.findById(token.getUser()).isPresent()){
+            User user = userRepository.findById(token.getUser()).get();
         String newAccessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole());
-
         return new AuthResponse(newAccessToken, token.getToken(), user.getRole());
+        }
+        else{
+            return null;
+        }
     }
 
     @PostMapping("/logout")
