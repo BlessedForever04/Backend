@@ -11,15 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.messaging.Task;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.*;
 
 @Service
 public class TaskService {
@@ -40,8 +34,23 @@ public class TaskService {
         this.memberRepository = memberRepository;
     }
 
+    public List<Tasks> getCollaboratedProjects(String id){
+        Tasks task = getTaskById(id);
+        List<String> projectIds =  task.getCollaboratedProjects();
+
+        List<Tasks> projects  = new ArrayList<>();
+
+        for (String projectId : projectIds) {
+            Tasks temp = getTaskById(projectId);
+            projects.add(temp);
+        }
+        return projects;
+    }
+
     public void addTask(Tasks task){
-      //  validateTaskForCreateOrUpdate(task);
+        if(task.getParentId() != null){
+            toggleType(task.getParentId());
+        }
         taskRepository.save(task);
 
         if (task.getParentId() != null && !task.getParentId().trim().isEmpty()) {
@@ -62,7 +71,7 @@ public class TaskService {
         return taskRepository.countByPriority(priority);
     }
 
-    public List<Tasks> getTaskByOwner(String ownerId){
+    public List<Tasks> getTaskByOwnerId(String ownerId){
         Optional<List<Tasks>> tasks = taskRepository.findByOwnerId(ownerId);
         return tasks.orElse(List.of());
     }
@@ -73,7 +82,10 @@ public class TaskService {
 
         final String parentId = existing.getParentId();
 
-        deleteDescendantsByParentId(existing.getId());
+        List<Tasks> children = getTasksByParentId(id);
+        for (Tasks child : children) {
+            deleteTaskById(child.getId());
+        }
 
         taskRepository.delete(existing);
 
@@ -82,7 +94,7 @@ public class TaskService {
         }
     }
 
-    public Tasks updateProgress(String id, short progress){
+    public void updateProgress(String id, short progress){
         Optional <Tasks> task = taskRepository.findById(id);
         if(task.isPresent()){
             task.get().setProgress(progress);
@@ -91,7 +103,6 @@ public class TaskService {
         else{
             throw new ResourceNotFoundException("Task not found with id : " + id);
         }
-        return null;
     }
 
     public void toggleType(String id){
@@ -271,11 +282,6 @@ public class TaskService {
         return taskRepository.findByType(type, pageable);
     }
 
-//    public Page<Tasks> getAllTasksByRootTypePaginated(String rootType, int page, int size){
-//        Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
-//        return taskRepository.findByRootType(rootType, pageable);
-//    }
-
     public Page<Tasks> getTaskByOwnerPaginated(String ownerId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
         return taskRepository.findByOwnerId(ownerId, pageable);
@@ -421,18 +427,23 @@ public class TaskService {
     }
 
     public void addDependency(String id, String projectId){
-        Optional <Tasks> existingTask = taskRepository.findById(id);
-        if(existingTask.isPresent()){
-            if(!existingTask.get().getDependencies().contains(projectId)){
-                existingTask.get().addDependencies(projectId);
-                taskRepository.save(existingTask.get());
-            }
-            else{
-                throw new IllegalStateException("Dependency already added");
-            }
+        if(Objects.equals(id, projectId)){
+            throw new RuntimeException("Can't add same project as dependency");
         }
         else{
-            throw new RuntimeException("Task / Project doesn't exist");
+            Optional <Tasks> existingTask = taskRepository.findById(id);
+            if(existingTask.isPresent()){
+                if(!existingTask.get().getDependencies().contains(projectId)){
+                    existingTask.get().addDependencies(projectId);
+                    taskRepository.save(existingTask.get());
+                }
+                else{
+                    throw new IllegalStateException("Dependency already added");
+                }
+            }
+            else{
+                throw new RuntimeException("Task / Project doesn't exist");
+            }
         }
     }
 

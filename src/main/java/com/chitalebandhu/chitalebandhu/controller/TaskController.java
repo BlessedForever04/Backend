@@ -30,30 +30,22 @@ public class TaskController {
         return taskService.getCountByPriority(priority);
     }
 
-
     @GetMapping("allTasks/{type}")
     public List<Tasks> getAllProject(@PathVariable String type){return taskService.getAllTasksByType(type);}
 
     @PostMapping("add")
     public void addTask(@RequestBody Tasks task){
-        if(task.getParentId() != null){
-            taskService.toggleType(task.getParentId());
-        }
         taskService.addTask(task);
     }
+
     @GetMapping("projects")
     public List<Tasks> getAllProjects(){
         return taskService.getAllProjects();
     }
 
     @GetMapping("member/{ownerId}")
-    public ResponseEntity<List<Tasks>> getTaskByOwner(@PathVariable String ownerId){
-        try{
-            List<Tasks> tasks = taskService.getTaskByOwner(ownerId);
-            return new ResponseEntity<>(tasks , HttpStatus.OK);
-        }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    public List<Tasks> getTaskByOwnerId(@PathVariable String ownerId){
+        return taskService.getTaskByOwnerId(ownerId);
     }
 
     @PutMapping("id/{id}/updateProgress")
@@ -62,38 +54,18 @@ public class TaskController {
     }
 
     @GetMapping("id/{id}")
-    public ResponseEntity<Tasks> getTaskById(@PathVariable String id){
-        try{
-            Tasks task = taskService.getTaskById(id);
-            return new ResponseEntity<>(task , HttpStatus.OK);
-        }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND );
-        }
+    public Tasks getTasksById(@PathVariable String id){
+        return taskService.getTaskById(id);
     }
 
-    @PutMapping("update/{Id}")
-    public ResponseEntity<Tasks> updateTask(@PathVariable String Id, @RequestBody Tasks newTask){
-        try {
-            Tasks task = taskService.updateTaskById(Id, newTask);
-            if(task != null) return new ResponseEntity<>(task , HttpStatus.OK);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    @PutMapping("update/{id}")
+    public void updateTask(@PathVariable String id, @RequestBody Tasks newTask){
+        taskService.updateTaskById(id, newTask);
     }
 
     @PutMapping("updateType/{Id}")
-    public ResponseEntity<Tasks> updateTaskType(@PathVariable String Id){
-        try {
-            taskService.toggleType(Id);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public void toggleType(@PathVariable String id){
+        taskService.toggleType(id);
     }
 
     @GetMapping("{id}/tasks")
@@ -103,23 +75,12 @@ public class TaskController {
 
     @DeleteMapping("delete/{id}")
     public void deleteTask(@PathVariable("id") String id){
-        List<Tasks> children = getTasksByParentId(id);
-        for (Tasks child : children) {
-            taskService.deleteTaskById(child.getId());
-        }
         taskService.deleteTaskById(id);
     }
 
     @PutMapping("{id}/status/update/{status}")
-    public ResponseEntity<Void> updateStatus(@PathVariable String id, @PathVariable String status){
-        try {
-            taskService.updateStatusById(id, status);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public void updateStatus(@PathVariable String id, @PathVariable String status){
+        taskService.updateStatusById(id, status);
     }
 
     @PutMapping("{id}/status/transition/{status}")
@@ -128,7 +89,8 @@ public class TaskController {
             @PathVariable String status,
             @RequestParam String actorId,
             @RequestParam(defaultValue = "USER") String actorRole
-    ) {
+    )
+    {
         try {
             Tasks updated = taskService.transitionTaskStatusWithReview(id, status, actorId, actorRole);
             return new ResponseEntity<>(updated, HttpStatus.OK);
@@ -150,24 +112,14 @@ public class TaskController {
     }
 
     @GetMapping("getCollaboratedProject/{id}")
-    public List<Tasks> getCollaboration(@PathVariable String id){
-            Tasks task = taskService.getTaskById(id);
-            List<String> projectIds =  task.getCollaboratedProjects();
-
-            List<Tasks> projects  = new ArrayList<>();
-
-        for (String projectId : projectIds) {
-            Tasks temp = taskService.getTaskById(projectId);
-            projects.add(temp);
-        }
-            return projects;
+    public List<Tasks> getCollaboratedProjects(@PathVariable String id){
+        return taskService.getCollaboratedProjects(id);
     }
 
     @PostMapping("collaboratedProject/add/{id}")
     public void addCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
         taskService.addCollaboratedProject(id, projectId);
     }
-
 
     @DeleteMapping("collaboratedProject/remove/{id}")
     public void removeCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
