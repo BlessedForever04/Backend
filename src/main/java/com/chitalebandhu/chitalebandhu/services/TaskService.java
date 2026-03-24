@@ -423,8 +423,13 @@ public class TaskService {
     public void addDependency(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
-            existingTask.get().addDependencies(projectId);
-            taskRepository.save(existingTask.get());
+            if(!existingTask.get().getDependencies().contains(projectId)){
+                existingTask.get().addDependencies(projectId);
+                taskRepository.save(existingTask.get());
+            }
+            else{
+                throw new IllegalStateException("Dependency already added");
+            }
         }
         else{
             throw new RuntimeException("Task / Project doesn't exist");
@@ -434,11 +439,14 @@ public class TaskService {
     public void removeDependency(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
-            existingTask.get().removeDependencies(projectId);
-            taskRepository.save(existingTask.get());
+            if(existingTask.get().getDependencies().contains(projectId)){
+                existingTask.get().removeDependencies(projectId);
+                taskRepository.save(existingTask.get());
+            }
+            else throw new IllegalStateException("Dependency doesn't exist");
         }
         else{
-            throw new RuntimeException("Task / Project doesn't exist");
+            throw new IllegalStateException("Dependency doesn't exist");
         }
     }
 
