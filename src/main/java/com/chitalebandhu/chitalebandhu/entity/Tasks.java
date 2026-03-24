@@ -102,11 +102,11 @@ public class Tasks {
         this.deadLine = deadLine;
     }
 
-    public String getParentTaskId() {
+    public String getParentId() {
         return parentId;
     }
 
-    public void setParentTaskId(String parentId) {
+    public void setParentId(String parentId) {
         this.parentId = parentId;
     }
 

@@ -44,8 +44,8 @@ public class TaskService {
       //  validateTaskForCreateOrUpdate(task);
         taskRepository.save(task);
 
-        if (task.getParentTaskId() != null && !task.getParentTaskId().trim().isEmpty()) {
-            recalculateProjectStats(task.getParentTaskId());
+        if (task.getParentId() != null && !task.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(task.getParentId());
         }
     }
 
@@ -71,14 +71,14 @@ public class TaskService {
         Tasks existing = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
 
-        final String parentTaskId = existing.getParentTaskId();
+        final String parentId = existing.getParentId();
 
         deleteDescendantsByParentId(existing.getId());
 
         taskRepository.delete(existing);
 
-        if (parentTaskId != null && !parentTaskId.trim().isEmpty()) {
-            recalculateProjectStats(parentTaskId);
+        if (parentId != null && !parentId.trim().isEmpty()) {
+            recalculateProjectStats(parentId);
         }
     }
 
@@ -114,7 +114,7 @@ public class TaskService {
 
 
         final Tasks task = existingTask.get();
-        final String oldParentTaskId = task.getParentTaskId();
+        final String oldParentId = task.getParentId();
 
         if (newTask.getTitle() != null && !newTask.getTitle().trim().isEmpty()) {
             task.setTitle(newTask.getTitle());
@@ -150,8 +150,8 @@ public class TaskService {
             task.setType(newTask.getType());
         }
 
-        if (newTask.getParentTaskId() != null) {
-            task.setParentTaskId(newTask.getParentTaskId());
+        if (newTask.getParentId() != null) {
+            task.setParentId(newTask.getParentId());
         }
 
         if (newTask.getDeadline() != null) {
@@ -174,20 +174,20 @@ public class TaskService {
 
         final Tasks saved = taskRepository.save(task);
 
-        final String newParentTaskId = saved.getParentTaskId();
-        if (oldParentTaskId != null && !oldParentTaskId.trim().isEmpty()) {
-            recalculateProjectStats(oldParentTaskId);
+        final String newParentId = saved.getParentId();
+        if (oldParentId != null && !oldParentId.trim().isEmpty()) {
+            recalculateProjectStats(oldParentId);
         }
-        if (newParentTaskId != null && !newParentTaskId.trim().isEmpty()
-                && !newParentTaskId.equals(oldParentTaskId)) {
-            recalculateProjectStats(newParentTaskId);
+        if (newParentId != null && !newParentId.trim().isEmpty()
+                && !newParentId.equals(oldParentId)) {
+            recalculateProjectStats(newParentId);
         }
 
       return saved;
     }
 
-    public long getTaskCountByParentTaskIdAndStatus(String parentTaskId, String status){
-        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, status);
+    public long getTaskCountByParentIdAndStatus(String parentTaskId, String status){
+        return taskRepository.countByParentIdAndStatus(parentTaskId, status);
     }
 
     public void updateStatusById(String id, String status){
@@ -204,8 +204,8 @@ public class TaskService {
             return;
         }
         Tasks saved = taskRepository.save(existingTask.get());
-        if (saved.getParentTaskId() != null && !saved.getParentTaskId().trim().isEmpty()) {
-            recalculateProjectStats(saved.getParentTaskId());
+        if (saved.getParentId() != null && !saved.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(saved.getParentId());
         }
     }
 
@@ -239,8 +239,8 @@ public class TaskService {
         }
 
         Tasks saved = taskRepository.save(task);
-        if (saved.getParentTaskId() != null && !saved.getParentTaskId().trim().isEmpty()) {
-            recalculateProjectStats(saved.getParentTaskId());
+        if (saved.getParentId() != null && !saved.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(saved.getParentId());
         }
 
         return saved;
@@ -348,8 +348,8 @@ public class TaskService {
             return;
         }
 
-        long total = taskRepository.countByParentTaskId(projectId);
-        long completed = taskRepository.countByParentTaskIdAndStatusIn(projectId, DONE_STATUSES);
+        long total = taskRepository.countByParentId(projectId);
+        long completed = taskRepository.countByParentIdAndStatusIn(projectId, DONE_STATUSES);
         long remaining = Math.max(0, total - completed);
         List<Tasks> children = taskRepository.findByParentId(projectId);
         int completedContribution = children.stream()
@@ -445,7 +445,7 @@ public class TaskService {
         try {
             Activity activity = new Activity();
 
-            String projectId = task.getParentTaskId();
+            String projectId = task.getParentId();
             String projectName = task.getTitle();
 
             if (projectId != null && !projectId.trim().isEmpty()) {

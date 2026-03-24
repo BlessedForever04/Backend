@@ -36,8 +36,8 @@ public class TaskController {
 
     @PostMapping("add")
     public void addTask(@RequestBody Tasks task){
-        if(task.getParentTaskId() != null){
-            taskService.toggleType(task.getParentTaskId());
+        if(task.getParentId() != null){
+            taskService.toggleType(task.getParentId());
         }
         taskService.addTask(task);
     }
@@ -101,12 +101,13 @@ public class TaskController {
         return taskService.getTasksByParentId(id);
     }
 
-    @DeleteMapping("delete/{Id}")
-    public void deleteTask(@PathVariable String id){
+    @DeleteMapping("delete/{id}")
+    public void deleteTask(@PathVariable("id") String id){
         List<Tasks> children = getTasksByParentId(id);
         for (Tasks child : children) {
             taskService.deleteTaskById(child.getId());
         }
+        taskService.deleteTaskById(id);
     }
 
     @PutMapping("{id}/status/update/{status}")
@@ -178,9 +179,9 @@ public class TaskController {
         return taskService.getAllTaskCountByType(type);
     }
 
-    @GetMapping("TodoCount/{parentTaskId}/{status}")
-    public long getCountTodo(@PathVariable String parentTaskId, @PathVariable String status){
-        return taskService.getTaskCountByParentTaskIdAndStatus(parentTaskId, status);
+    @GetMapping("TodoCount/{parentId}/{status}")
+    public long getCountTodo(@PathVariable String parentId, @PathVariable String status){
+        return taskService.getTaskCountByParentIdAndStatus(parentId, status);
     }
 
     // Paginated endpoints
