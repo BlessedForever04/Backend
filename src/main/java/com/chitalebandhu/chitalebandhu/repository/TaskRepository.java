@@ -11,11 +11,11 @@ import java.util.Optional;
 
 public interface TaskRepository extends MongoRepository<Tasks, String> {
     Optional<List<Tasks>> findByOwnerId(String ownerId);
-    List<Tasks> findByParentTaskId(String parentTaskId);
+    List<Tasks> findByParentId(String parentTaskId);
 
-    long countByParentTaskIdAndStatus(String parentTaskId, String Status);
-    long countByParentTaskId(String parentTaskId);
-    long countByParentTaskIdAndStatusIn(String parentTaskId, List<String> statuses);
+    long countByParentIdAndStatus(String parentTaskId, String Status);
+    long countByParentId(String parentTaskId);
+    long countByParentIdAndStatusIn(String parentTaskId, List<String> statuses);
 
     Optional <List<Tasks>> findByTypeOrIsProject(String Type , boolean isProject);
 
@@ -34,7 +34,7 @@ public interface TaskRepository extends MongoRepository<Tasks, String> {
     Page<Tasks> findByType(String type, Pageable pageable);
     //Page<Tasks> findByRootType(String type, Pageable pageable);
     Page<Tasks> findByOwnerId(String ownerId, Pageable pageable);
-    Page<Tasks> findByParentTaskId(String parentTaskId, Pageable pageable);
+//    Page<Tasks> findByParentTaskId(String parentTaskId, Pageable pageable);
 
     // Find tasks/projects that are overdue (deadline passed and not completed/already overdue)
     List<Tasks> findByDeadLineBeforeAndStatusNotIn(LocalDate date, List<String> excludedStatuses);

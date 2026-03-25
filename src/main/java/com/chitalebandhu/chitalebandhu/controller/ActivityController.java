@@ -22,7 +22,7 @@ public class ActivityController {
 
     @GetMapping("{ownerId}/{visibility}")
     public List<Activity> getActivities(@PathVariable String ownerId, @PathVariable String visibility){
-        List <Tasks> tasks = taskService.getTaskByOwner(ownerId);
+        List <Tasks> tasks = taskService.getTaskByOwnerId(ownerId);
         List<String> taskId = tasks
                 .stream()
                 .map(Tasks::getId)

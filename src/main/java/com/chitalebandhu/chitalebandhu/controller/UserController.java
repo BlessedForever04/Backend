@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("user")
 public class UserController {
 
-    private PasswordEncoder passwordEncoder;
-
     private final UserService userService;
     public UserController(UserService userService){
         this.userService = userService;
@@ -18,7 +16,6 @@ public class UserController {
 
     @PutMapping("updatePassowrd/{id}")
     public void updatePassword(@PathVariable String id, @RequestBody String newPassword){
-        newPassword = passwordEncoder.encode(newPassword);
         userService.updatePassword(id, newPassword);
     }
 }
