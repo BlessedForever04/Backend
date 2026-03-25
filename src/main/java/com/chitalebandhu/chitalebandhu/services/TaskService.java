@@ -197,8 +197,8 @@ public class TaskService {
       return saved;
     }
 
-    public long getTaskCountByParentIdAndStatus(String parentTaskId, String status){
-        return taskRepository.countByParentIdAndStatus(parentTaskId, status);
+    public long getTaskCountByParentIdAndStatus(String parentId, String status){
+        return taskRepository.countByParentIdAndStatus(parentId, status);
     }
 
     public void updateStatusById(String id, String status){
@@ -296,7 +296,7 @@ public class TaskService {
 //        task.setType(type);
 //
 //        if ("TASK".equals(type)) {
-//            if (task.getParentTaskId() == null || task.getParentTaskId().trim().isEmpty()) {
+//            if (task.getParentId() == null || task.getParentTaskId().trim().isEmpty()) {
 //                throw new IllegalStateException("TASK must have a valid parent project id");
 //            }
 //
