@@ -4,7 +4,6 @@ import com.chitalebandhu.chitalebandhu.DTOs.PagedResponse;
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
 import com.chitalebandhu.chitalebandhu.services.TaskService;
 import com.chitalebandhu.chitalebandhu.services.OverdueSchedulerService;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,32 +30,22 @@ public class TaskController {
         return taskService.getCountByPriority(priority);
     }
 
-
     @GetMapping("allTasks/{type}")
     public List<Tasks> getAllProject(@PathVariable String type){return taskService.getAllTasksByType(type);}
 
     @PostMapping("add")
     public void addTask(@RequestBody Tasks task){
-        if(task.getParentTaskId() != null){
-            taskService.toggleType(task.getParentTaskId());
-        }
         taskService.addTask(task);
     }
+
     @GetMapping("projects")
     public List<Tasks> getAllProjects(){
         return taskService.getAllProjects();
     }
 
-
-
     @GetMapping("member/{ownerId}")
-    public ResponseEntity<List<Tasks>> getTaskByOwner(@PathVariable String ownerId){
-        try{
-            List<Tasks> tasks = taskService.getTaskByOwner(ownerId);
-            return new ResponseEntity<>(tasks , HttpStatus.OK);
-        }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    public List<Tasks> getTaskByOwnerId(@PathVariable String ownerId){
+        return taskService.getTaskByOwnerId(ownerId);
     }
 
     @PutMapping("id/{id}/updateProgress")
@@ -65,13 +54,8 @@ public class TaskController {
     }
 
     @GetMapping("id/{id}")
-    public ResponseEntity<Tasks> getTaskById(@PathVariable String id){
-        try{
-            Tasks task = taskService.getTaskById(id);
-            return new ResponseEntity<>(task , HttpStatus.OK);
-        }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND );
-        }
+    public Tasks getTasksById(@PathVariable String id){
+        return taskService.getTaskById(id);
     }
     @GetMapping("parentId/{id}")
     public ResponseEntity<List<Tasks>> getTasksByParentId(@PathVariable String id){
@@ -83,46 +67,29 @@ public class TaskController {
         }
     }
 
-    @PutMapping("update/{Id}")
-    public ResponseEntity<Tasks> updateTask(@PathVariable String Id, @RequestBody Tasks newTask){
-        try {
-            Tasks task = taskService.updateTaskById(Id, newTask);
-            if(task != null) return new ResponseEntity<>(task , HttpStatus.OK);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    @PutMapping("update/{id}")
+    public void updateTask(@PathVariable String id, @RequestBody Tasks newTask){
+        taskService.updateTaskById(id, newTask);
     }
 
     @PutMapping("updateType/{Id}")
-    public ResponseEntity<Tasks> updateTaskType(@PathVariable String Id){
-        try {
-            taskService.toggleType(Id);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public void toggleType(@PathVariable String id){
+        taskService.toggleType(id);
     }
 
-    @DeleteMapping("delete/{Id}")
-    public void deleteTask(@PathVariable String Id){
-        taskService.deleteTaskById(Id);
+    @GetMapping("{id}/tasks")
+    public List<Tasks> getTasksByParentId(@PathVariable String id){
+        return taskService.getTasksByParentId(id);
+    }
+
+    @DeleteMapping("delete/{id}")
+    public void deleteTask(@PathVariable("id") String id){
+        taskService.deleteTaskById(id);
     }
 
     @PutMapping("{id}/status/update/{status}")
-    public ResponseEntity<Void> updateStatus(@PathVariable String id, @PathVariable String status){
-        try {
-            taskService.updateStatusById(id, status);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public void updateStatus(@PathVariable String id, @PathVariable String status){
+        taskService.updateStatusById(id, status);
     }
 
     @PutMapping("{id}/status/transition/{status}")
@@ -131,7 +98,8 @@ public class TaskController {
             @PathVariable String status,
             @RequestParam String actorId,
             @RequestParam(defaultValue = "USER") String actorRole
-    ) {
+    )
+    {
         try {
             Tasks updated = taskService.transitionTaskStatusWithReview(id, status, actorId, actorRole);
             return new ResponseEntity<>(updated, HttpStatus.OK);
@@ -153,24 +121,14 @@ public class TaskController {
     }
 
     @GetMapping("getCollaboratedProject/{id}")
-    public List<Tasks> getCollaboration(@PathVariable String id){
-            Tasks task = taskService.getTaskById(id);
-            List<String> projectIds =  task.getCollaboratedProjects();
-
-            List<Tasks> projects  = new ArrayList<>();
-
-            for (int i = 0 ; i < projectIds.size() ; i++){
-                Tasks temp =  taskService.getTaskById(projectIds.get(i));
-                projects.add(temp);
-            }
-            return projects;
+    public List<Tasks> getCollaboratedProjects(@PathVariable String id){
+        return taskService.getCollaboratedProjects(id);
     }
 
     @PostMapping("collaboratedProject/add/{id}")
     public void addCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
-        taskService.addColaboratedProject(id, projectId);
+        taskService.addCollaboratedProject(id, projectId);
     }
-
 
     @DeleteMapping("collaboratedProject/remove/{id}")
     public void removeCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
@@ -182,9 +140,9 @@ public class TaskController {
         return taskService.getAllTaskCountByType(type);
     }
 
-    @GetMapping("TodoCount/{parentTaskId}/{status}")
-    public long getCountTodo(@PathVariable String parentTaskId, @PathVariable String status){
-        return taskService.getTaskCountByParentTaskIdAndStatus(parentTaskId, status);
+    @GetMapping("TodoCount/{parentId}/{status}")
+    public long getCountTodo(@PathVariable String parentId, @PathVariable String status){
+        return taskService.getTaskCountByParentIdAndStatus(parentId, status);
     }
 
     // Paginated endpoints
@@ -200,17 +158,6 @@ public class TaskController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-
-//    @GetMapping("paginated/{rootType}")
-//    public ResponseEntity<PagedResponse<Tasks>> getTasksByRootType(@PathVariable String rootType, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-//        try {
-//            Page<Tasks> tasksPage = taskService.getAllTasksByRootTypePaginated(rootType, page, size);
-//            return new ResponseEntity<>(new PagedResponse<>(tasksPage), HttpStatus.OK);
-//        }
-//        catch (Exception e) {
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//        }
-//    }
 
     @GetMapping("paginated/owner/{ownerId}")
     public ResponseEntity<PagedResponse<Tasks>> getTasksByOwnerPaginated(

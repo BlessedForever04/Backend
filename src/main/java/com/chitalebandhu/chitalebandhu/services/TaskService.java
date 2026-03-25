@@ -11,15 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.messaging.Task;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.*;
 
 @Service
 public class TaskService {
@@ -40,13 +34,32 @@ public class TaskService {
         this.memberRepository = memberRepository;
     }
 
+    public List<Tasks> getCollaboratedProjects(String id){
+        Tasks task = getTaskById(id);
+        List<String> projectIds =  task.getCollaboratedProjects();
+
+        List<Tasks> projects  = new ArrayList<>();
+
+        for (String projectId : projectIds) {
+            Tasks temp = getTaskById(projectId);
+            projects.add(temp);
+        }
+        return projects;
+    }
+
     public void addTask(Tasks task){
-      //  validateTaskForCreateOrUpdate(task);
+        if(task.getParentId() != null){
+            toggleType(task.getParentId());
+        }
         taskRepository.save(task);
 
-        if (task.getParentTaskId() != null && !task.getParentTaskId().trim().isEmpty()) {
-            recalculateProjectStats(task.getParentTaskId());
+        if (task.getParentId() != null && !task.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(task.getParentId());
         }
+    }
+
+    public List<Tasks> getTasksByParentId(String id){
+        return taskRepository.findByParentId(id);
     }
 
     public Tasks getTaskById(String id){
@@ -58,7 +71,7 @@ public class TaskService {
         return taskRepository.countByPriority(priority);
     }
 
-    public List<Tasks> getTaskByOwner(String ownerId){
+    public List<Tasks> getTaskByOwnerId(String ownerId){
         Optional<List<Tasks>> tasks = taskRepository.findByOwnerId(ownerId);
         return tasks.orElse(List.of());
     }
@@ -67,18 +80,21 @@ public class TaskService {
         Tasks existing = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
 
-        final String parentTaskId = existing.getParentTaskId();
+        final String parentId = existing.getParentId();
 
-        deleteDescendantsByParentId(existing.getId());
+        List<Tasks> children = getTasksByParentId(id);
+        for (Tasks child : children) {
+            deleteTaskById(child.getId());
+        }
 
         taskRepository.delete(existing);
 
-        if (parentTaskId != null && !parentTaskId.trim().isEmpty()) {
-            recalculateProjectStats(parentTaskId);
+        if (parentId != null && !parentId.trim().isEmpty()) {
+            recalculateProjectStats(parentId);
         }
     }
 
-    public Tasks updateProgress(String id, short progress){
+    public void updateProgress(String id, short progress){
         Optional <Tasks> task = taskRepository.findById(id);
         if(task.isPresent()){
             task.get().setProgress(progress);
@@ -87,13 +103,17 @@ public class TaskService {
         else{
             throw new ResourceNotFoundException("Task not found with id : " + id);
         }
-        return null;
     }
 
     public void toggleType(String id){
         Optional<Tasks> existingTask = taskRepository.findById(id);
-        existingTask.get().setIsProject(true);
-        taskRepository.save(existingTask.get());
+        if(existingTask.isPresent()){
+            existingTask.get().setIsProject(true);
+            taskRepository.save(existingTask.get());
+        }
+        else{
+            throw new RuntimeException("Task not found");
+        }
     }
 
     public Tasks updateTaskById(String id, Tasks newTask) {
@@ -105,7 +125,7 @@ public class TaskService {
 
 
         final Tasks task = existingTask.get();
-        final String oldParentTaskId = task.getParentTaskId();
+        final String oldParentId = task.getParentId();
 
         if (newTask.getTitle() != null && !newTask.getTitle().trim().isEmpty()) {
             task.setTitle(newTask.getTitle());
@@ -141,8 +161,8 @@ public class TaskService {
             task.setType(newTask.getType());
         }
 
-        if (newTask.getParentTaskId() != null) {
-            task.setParentTaskId(newTask.getParentTaskId());
+        if (newTask.getParentId() != null) {
+            task.setParentId(newTask.getParentId());
         }
 
         if (newTask.getDeadline() != null) {
@@ -165,20 +185,20 @@ public class TaskService {
 
         final Tasks saved = taskRepository.save(task);
 
-        final String newParentTaskId = saved.getParentTaskId();
-        if (oldParentTaskId != null && !oldParentTaskId.trim().isEmpty()) {
-            recalculateProjectStats(oldParentTaskId);
+        final String newParentId = saved.getParentId();
+        if (oldParentId != null && !oldParentId.trim().isEmpty()) {
+            recalculateProjectStats(oldParentId);
         }
-        if (newParentTaskId != null && !newParentTaskId.trim().isEmpty()
-                && !newParentTaskId.equals(oldParentTaskId)) {
-            recalculateProjectStats(newParentTaskId);
+        if (newParentId != null && !newParentId.trim().isEmpty()
+                && !newParentId.equals(oldParentId)) {
+            recalculateProjectStats(newParentId);
         }
 
       return saved;
     }
 
-    public long getTaskCountByParentTaskIdAndStatus(String parentTaskId, String status){
-        return taskRepository.countByParentTaskIdAndStatus(parentTaskId, status);
+    public long getTaskCountByParentIdAndStatus(String parentId, String status){
+        return taskRepository.countByParentIdAndStatus(parentId, status);
     }
 
     public void updateStatusById(String id, String status){
@@ -195,8 +215,8 @@ public class TaskService {
             return;
         }
         Tasks saved = taskRepository.save(existingTask.get());
-        if (saved.getParentTaskId() != null && !saved.getParentTaskId().trim().isEmpty()) {
-            recalculateProjectStats(saved.getParentTaskId());
+        if (saved.getParentId() != null && !saved.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(saved.getParentId());
         }
     }
 
@@ -230,8 +250,8 @@ public class TaskService {
         }
 
         Tasks saved = taskRepository.save(task);
-        if (saved.getParentTaskId() != null && !saved.getParentTaskId().trim().isEmpty()) {
-            recalculateProjectStats(saved.getParentTaskId());
+        if (saved.getParentId() != null && !saved.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(saved.getParentId());
         }
 
         return saved;
@@ -271,11 +291,6 @@ public class TaskService {
         return taskRepository.findByType(type, pageable);
     }
 
-//    public Page<Tasks> getAllTasksByRootTypePaginated(String rootType, int page, int size){
-//        Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
-//        return taskRepository.findByRootType(rootType, pageable);
-//    }
-
     public Page<Tasks> getTaskByOwnerPaginated(String ownerId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("_id").descending());
         return taskRepository.findByOwnerId(ownerId, pageable);
@@ -290,7 +305,7 @@ public class TaskService {
 //        task.setType(type);
 //
 //        if ("TASK".equals(type)) {
-//            if (task.getParentTaskId() == null || task.getParentTaskId().trim().isEmpty()) {
+//            if (task.getParentId() == null || task.getParentTaskId().trim().isEmpty()) {
 //                throw new IllegalStateException("TASK must have a valid parent project id");
 //            }
 //
@@ -348,10 +363,10 @@ public class TaskService {
             return;
         }
 
-        long total = taskRepository.countByParentTaskId(projectId);
-        long completed = taskRepository.countByParentTaskIdAndStatusIn(projectId, DONE_STATUSES);
+        long total = taskRepository.countByParentId(projectId);
+        long completed = taskRepository.countByParentIdAndStatusIn(projectId, DONE_STATUSES);
         long remaining = Math.max(0, total - completed);
-        List<Tasks> children = taskRepository.findByParentTaskId(projectId);
+        List<Tasks> children = taskRepository.findByParentId(projectId);
         int completedContribution = children.stream()
                 .filter(child -> DONE_STATUSES.contains(normalize(child.getStatus())))
                 .mapToInt(Tasks::getContributionPercent)
@@ -375,7 +390,7 @@ public class TaskService {
 
         while (!queue.isEmpty()) {
             String parentId = queue.removeFirst();
-            List<Tasks> children = taskRepository.findByParentTaskId(parentId);
+            List<Tasks> children = taskRepository.findByParentId(parentId);
             if (children.isEmpty()) {
                 continue;
             }
@@ -393,11 +408,16 @@ public class TaskService {
         }
     }
 
-    public void addColaboratedProject(String id, String projectId){
+    public void addCollaboratedProject(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
-            existingTask.get().addCollaboratedProjects(projectId);
-            taskRepository.save(existingTask.get());
+            if(!existingTask.get().getCollaboratedProjects().contains(projectId)){
+                existingTask.get().addCollaboratedProjects(projectId);
+                taskRepository.save(existingTask.get());
+            }
+            else{
+                throw new RuntimeException("You have already collaborated with this project");
+            }
         }
         else{
             throw new RuntimeException("Task / Project doesn't exist");
@@ -416,24 +436,37 @@ public class TaskService {
     }
 
     public void addDependency(String id, String projectId){
-        Optional <Tasks> existingTask = taskRepository.findById(id);
-        if(existingTask.isPresent()){
-            existingTask.get().addDependencies(projectId);
-            taskRepository.save(existingTask.get());
+        if(Objects.equals(id, projectId)){
+            throw new RuntimeException("Can't add same project as dependency");
         }
         else{
-            throw new RuntimeException("Task / Project doesn't exist");
+            Optional <Tasks> existingTask = taskRepository.findById(id);
+            if(existingTask.isPresent()){
+                if(!existingTask.get().getDependencies().contains(projectId)){
+                    existingTask.get().addDependencies(projectId);
+                    taskRepository.save(existingTask.get());
+                }
+                else{
+                    throw new IllegalStateException("Dependency already added");
+                }
+            }
+            else{
+                throw new RuntimeException("Task / Project doesn't exist");
+            }
         }
     }
 
     public void removeDependency(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
-            existingTask.get().removeDependencies(projectId);
-            taskRepository.save(existingTask.get());
+            if(existingTask.get().getDependencies().contains(projectId)){
+                existingTask.get().removeDependencies(projectId);
+                taskRepository.save(existingTask.get());
+            }
+            else throw new IllegalStateException("Dependency doesn't exist");
         }
         else{
-            throw new RuntimeException("Task / Project doesn't exist");
+            throw new IllegalStateException("Dependency doesn't exist");
         }
     }
 
@@ -445,7 +478,7 @@ public class TaskService {
         try {
             Activity activity = new Activity();
 
-            String projectId = task.getParentTaskId();
+            String projectId = task.getParentId();
             String projectName = task.getTitle();
 
             if (projectId != null && !projectId.trim().isEmpty()) {

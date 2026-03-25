@@ -18,8 +18,6 @@ public class MemberController {
 
     @Autowired
     private MemberService memberService;
-    @Autowired
-    private TaskService taskService;
 
     @GetMapping("all")
     public List<Member> getAllMembers(){
@@ -27,9 +25,8 @@ public class MemberController {
     }
 
     @PostMapping
-    public boolean addMember(@RequestBody Member member){
+    public void addMember(@RequestBody Member member){
         memberService.addMember(member);
-        return true;
     }
 
     @GetMapping("count")
@@ -48,21 +45,18 @@ public class MemberController {
     }
 
     @GetMapping("id/{myId}")
-    public ResponseEntity<Member> getMemberById(@PathVariable String myId){
-       Member member = memberService.getMemberById(myId);
-       return ResponseEntity.ok(member);
+    public Member getMemberById(@PathVariable String myId){
+       return memberService.getMemberById(myId);
     }
 
     @PutMapping("update/{myId}")
-    public boolean updateMemberById(@PathVariable String myId,@RequestBody Member member){
+    public void updateMemberById(@PathVariable String myId,@RequestBody Member member){
         memberService.updateMemberById(myId , member);
-        return true;
     }
 
     @DeleteMapping("delete/{myId}")
-    public boolean deleteMemberById(@PathVariable String myId){
-        memberService.deleteMemberById(myId) ;
-        return true;
+    public void deleteMemberById(@PathVariable String myId){
+        memberService.deleteMemberById(myId);
     }
 
     // Paginated endpoint
