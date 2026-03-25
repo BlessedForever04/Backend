@@ -246,7 +246,16 @@ public class TaskService {
      }
 
     }
+    public List<Tasks> getTasksByParentId(String parentId){
+        List<Tasks> tasks = taskRepository.findByParentTaskId(parentId);
 
+        if(!tasks.isEmpty()){
+            return tasks;
+        }else {
+            throw  new ResourceNotFoundException("No projects found");
+        }
+
+    }
 
     public long getAllTaskCountByType(String type){
         return taskRepository.countByType(type);

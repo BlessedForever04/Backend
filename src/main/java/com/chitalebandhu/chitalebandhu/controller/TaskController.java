@@ -73,6 +73,15 @@ public class TaskController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND );
         }
     }
+    @GetMapping("parentId/{id}")
+    public ResponseEntity<List<Tasks>> getTasksByParentId(@PathVariable String id){
+        try{
+            List<Tasks> task = taskService.getTasksByParentId(id);
+            return new ResponseEntity<>(task , HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND );
+        }
+    }
 
     @PutMapping("update/{Id}")
     public ResponseEntity<Tasks> updateTask(@PathVariable String Id, @RequestBody Tasks newTask){
