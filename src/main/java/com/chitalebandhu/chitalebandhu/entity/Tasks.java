@@ -27,7 +27,7 @@ public class Tasks {
     private String parentId;
 
     private List<String> collaboratedProjects = new ArrayList<>();
-    private List<String> dependencies;
+    private List<String> dependencies = new ArrayList<>();
     private short progress; // out of 100 (it'll be represented as percentage)
     @JsonProperty("contributionPercent")
     @JsonAlias({"contribution", "contribution_percentage"})

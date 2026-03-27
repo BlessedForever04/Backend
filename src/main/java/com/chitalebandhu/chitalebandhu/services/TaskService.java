@@ -406,6 +406,18 @@ public class TaskService {
         }
     }
 
+
+
+    public void removeCollaboratedProject(String id, String projectId){
+        Optional <Tasks> existingTask = taskRepository.findById(id);
+        if(existingTask.isPresent()){
+            existingTask.get().removeCollaboratedProjects(projectId);
+            taskRepository.save(existingTask.get());
+        }
+        else{
+            throw new RuntimeException("Task / Project doesn't exist");
+        }
+    }
     public void addCollaboratedProject(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
         if(existingTask.isPresent()){
@@ -422,22 +434,8 @@ public class TaskService {
         }
     }
 
-    public void removeCollaboratedProject(String id, String projectId){
-        Optional <Tasks> existingTask = taskRepository.findById(id);
-        if(existingTask.isPresent()){
-            existingTask.get().removeCollaboratedProjects(projectId);
-            taskRepository.save(existingTask.get());
-        }
-        else{
-            throw new RuntimeException("Task / Project doesn't exist");
-        }
-    }
-
     public void addDependency(String id, String projectId){
-        if(Objects.equals(id, projectId)){
-            throw new RuntimeException("Can't add same project as dependency");
-        }
-        else{
+        System.out.println("inside add dependency");
             Optional <Tasks> existingTask = taskRepository.findById(id);
             if(existingTask.isPresent()){
                 if(!existingTask.get().getDependencies().contains(projectId)){
@@ -448,10 +446,6 @@ public class TaskService {
                     throw new IllegalStateException("Dependency already added");
                 }
             }
-            else{
-                throw new RuntimeException("Task / Project doesn't exist");
-            }
-        }
     }
 
     public void removeDependency(String id, String projectId){

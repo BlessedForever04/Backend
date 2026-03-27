@@ -7,10 +7,10 @@ import com.chitalebandhu.chitalebandhu.services.OverdueSchedulerService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.config.Task;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -57,6 +57,7 @@ public class TaskController {
     public Tasks getTasksById(@PathVariable String id){
         return taskService.getTaskById(id);
     }
+
     @GetMapping("parentId/{id}")
     public ResponseEntity<List<Tasks>> getTasksByParentId(@PathVariable String id){
         try{
@@ -64,6 +65,44 @@ public class TaskController {
             return new ResponseEntity<>(task , HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND );
+        }
+    }
+
+    @GetMapping("/getAllTasksByCollaboration/{id}")
+    public ResponseEntity<Map<String, List<Tasks>>> getAllTasksByCollaboration(@PathVariable String id) {
+        try {
+            Tasks task = taskService.getTaskById(id);
+
+            if (task == null) {
+                System.out.println("Task not found");
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            List<String> projectIds = task.getCollaboratedProjects();
+            Map<String, List<Tasks>> result = new HashMap<>();
+
+            for (String projectId : projectIds) {
+                try {
+                    List<Tasks> tasks = taskService.getTasksByParentId(projectId);
+                    Tasks parentTask = taskService.getTaskById(projectId);
+
+                    if (parentTask != null) {
+                        result.put(parentTask.getTitle(), tasks);
+                    }
+
+                } catch (Exception e) {
+                    System.out.println("Skipping projectId: " + projectId);
+                    System.out.println("Reason: " + e.getMessage());
+                }
+            }
+
+            System.out.println("FINAL RESULT: " + result);
+
+            return new ResponseEntity<>(result, HttpStatus.OK);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // 🔥 ADD THIS
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -107,8 +146,9 @@ public class TaskController {
         }
     }
 
-    @PostMapping("dependency/add/{id}")
+    @PostMapping("/dependency/add/{id}")
     public void addDependency(@PathVariable String id, @RequestBody String projectId){
+
         taskService.addDependency(id, projectId);
     }
 
