@@ -16,31 +16,48 @@ public class Tasks {
     private String description;
     private String category;
     private String priority;
-    // When we add subtasks within a task (not project) we convert that task type into project so the owner of that task will now see that task in his project dashboard
-    // This causes on issue, as type == PROJECT now, admin will see it in his dashboard too which we dont want, because this task is project for task owner but still a task within a project
-    // To avoid this, we can manage 2 types, type == PROJECT will be used to show this task in the owner's project dashboard
-    // And we'll use rootType, we'll declare rootType = PROJECT when we create project, rootType = TASK when we create task, and it'll never change, so admin will fetch only main projects
     private boolean isProject;
-    private String type; // Here type we assign as PROJECT / TASK
+    private List<Remark> remarks;
+    private String type; // PROJECT / TASK
     private String status; // NOT_STARTED / IN_PROGRESS / DONE / OVERDUE
     private String ownerId;
     private String parentId;
-
     private List<String> collaboratedProjects = new ArrayList<>();
     private List<String> dependencies = new ArrayList<>();
-    private short progress; // out of 100 (it'll be represented as percentage)
+    private short progress;
     @JsonProperty("contributionPercent")
     @JsonAlias({"contribution", "contribution_percentage"})
     private int contributionPercent;
-
-    // When project's remaining days are less than critical days, then that project is in critical condition
-    // Team leader will asign this critical days from project creation page
     private int criticalDays;
-    private String remark;
     private LocalDate deadLine;
     private LocalDate startDate;
     private int remainingTask;
     private int completedTask;
+
+    public void addRemark(Remark remark){
+        remarks.add(remark);
+    }
+
+    public void removeRemark(Remark remark){
+        remarks.remove(remark);
+    }
+
+    public void updateRemark(String remarkId, Remark newRemark){
+        for (Remark exisitingRemark : remarks) {
+            if (exisitingRemark.getId().equals(remarkId)) {
+                exisitingRemark.setMessage(newRemark.getMessage());
+                exisitingRemark.setMentionedUserId(newRemark.getMentionedUserId());
+                break;
+            }
+        }
+    }
+    public List<Remark> getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(List<Remark> remarks) {
+        this.remarks = remarks;
+    }
 
     public String getId() {
         return id;
@@ -76,14 +93,6 @@ public class Tasks {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
     }
 
     public String getPriority() {
