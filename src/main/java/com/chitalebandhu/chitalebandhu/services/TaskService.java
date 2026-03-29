@@ -147,10 +147,6 @@ public class TaskService {
 
         task.setCriticalDays(newTask.getCriticalDays());
 
-        if (newTask.getRemark() != null && !newTask.getRemark().trim().isEmpty()) {
-            task.setRemark(newTask.getRemark());
-        }
-
         if (newTask.getPriority() != null && !newTask.getPriority().trim().isEmpty()) {
             task.setPriority(newTask.getPriority());
         }
