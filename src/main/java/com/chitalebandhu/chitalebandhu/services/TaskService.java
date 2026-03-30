@@ -1,5 +1,6 @@
 package com.chitalebandhu.chitalebandhu.services;
 
+import com.chitalebandhu.chitalebandhu.entity.Remark;
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
 import com.chitalebandhu.chitalebandhu.entity.Activity;
 import com.chitalebandhu.chitalebandhu.entity.Member;
@@ -443,6 +444,20 @@ public class TaskService {
                 }
             }
     }
+    public void addRemark(String id, Remark remark){
+        System.out.println("inside add remark");
+        Optional <Tasks> existingTask = taskRepository.findById(id);
+        remark.setId(UUID.randomUUID().toString());
+        if(existingTask.isPresent()){
+            System.out.println("good");
+                existingTask.get().addRemark(remark);
+                taskRepository.save(existingTask.get());
+        }
+        else{
+            System.out.println("failed");
+            throw new IllegalStateException("Failed to send message");
+        }
+    }
 
     public void removeDependency(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
@@ -518,5 +533,24 @@ public class TaskService {
                 .filter(name -> name != null && !name.trim().isEmpty())
                 .findFirst()
                 .orElse(actorId);
+    }
+
+    public List<Remark> getAllremarks(String id){
+        Optional<Tasks> task = taskRepository.findById(id);
+        if(task.isPresent()){
+            List<Remark> remarks =  task.get().getRemarks();
+            for (int i = 0 ; i<  remarks.size() ; i++){
+                Remark remark = remarks.get(i);
+                Optional<Member> member = memberRepository.findById(remark.getSenderId());
+                if (member.isPresent()){
+                    remarks.get(i).setSenderName(member.get().getName());
+                }else {
+                    throw new RuntimeException("No member found may be deleted");
+                }
+            }
+            return remarks;
+        }else {
+            throw  new ResourceNotFoundException("No remarks found");
+        }
     }
 }

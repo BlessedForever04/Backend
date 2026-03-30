@@ -10,17 +10,18 @@ public class Remark {
     @Id
     private String id;
     private String senderName;
+    private String senderId;
     // use mentionedUserId to only notify the receiver, no other use ig
     private List<String> mentionedUserId = new ArrayList<>();
     private String message;
     private LocalDateTime time;
 
-    public String getSenderName() {
-        return senderName;
+    public String getSenderId() {
+        return senderId;
     }
 
-    public void setSenderName(String senderName) {
-        this.senderName = senderName;
+    public void setSenderId(String senderName) {
+        this.senderId = senderName;
     }
 
     public List<String> getMentionedUserId() {
@@ -61,5 +62,13 @@ public class Remark {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
 }

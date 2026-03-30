@@ -17,7 +17,7 @@ public class Tasks {
     private String category;
     private String priority;
     private boolean isProject;
-    private List<Remark> remarks;
+    private List<Remark> remarks = new ArrayList<>();
     private String type; // PROJECT / TASK
     private String status; // NOT_STARTED / IN_PROGRESS / DONE / OVERDUE
     private String ownerId;

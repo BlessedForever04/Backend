@@ -2,6 +2,7 @@ package com.chitalebandhu.chitalebandhu.controller;
 
 import com.chitalebandhu.chitalebandhu.DTOs.PagedResponse;
 import com.chitalebandhu.chitalebandhu.entity.Notification;
+import com.chitalebandhu.chitalebandhu.entity.Remark;
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
 import com.chitalebandhu.chitalebandhu.services.TaskService;
 import com.chitalebandhu.chitalebandhu.services.OverdueSchedulerService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.config.Task;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @CrossOrigin(origins = "*")
@@ -167,6 +169,25 @@ public class TaskController {
     public void addCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
         taskService.addCollaboratedProject(id, projectId);
     }
+    @PostMapping("remark/add/{id}")
+    public void addRemark(@PathVariable String id , @RequestBody Remark remark){
+        remark.setTime(LocalDateTime.now());
+        System.out.println(remark.getSenderId());
+        System.out.println(id);
+        taskService.addRemark(id ,remark);
+
+    }
+
+
+
+    @GetMapping("getAllRemarks/{id}")
+    public List<Remark> getAllRemarks(@PathVariable String id){
+        List<Remark> remarks = taskService.getAllremarks(id);
+
+        return remarks;
+    }
+
+
 
     @DeleteMapping("collaboratedProject/remove/{id}")
     public void removeCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
