@@ -9,4 +9,4 @@ COPY . .
 RUN ./mvnw clean package -DskipTests
 
 # Run the generated jar
-CMD ["java", "-jar", "target/management-system-0.0.1-SNAPSHOT.jar"]
+CMD ["sh", "-c", "java -jar target/*.jar"]
