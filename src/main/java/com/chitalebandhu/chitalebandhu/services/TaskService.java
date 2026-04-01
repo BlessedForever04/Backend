@@ -47,6 +47,19 @@ public class TaskService {
         }
         return projects;
     }
+    public List<Tasks> getDependency(String id){
+        Tasks task = getTaskById(id);
+        List<String> projectIds =  task.getDependencies();
+
+        List<Tasks> projects  = new ArrayList<>();
+
+        for (String projectId : projectIds) {
+            Tasks temp = getTaskById(projectId);
+            projects.add(temp);
+        }
+
+        return projects;
+    }
 
     public void addTask(Tasks task){
         if(task.getParentId() != null){

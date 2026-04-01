@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.config.Task;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.service.annotation.GetExchange;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -164,6 +165,21 @@ public class TaskController {
     public List<Tasks> getCollaboratedProjects(@PathVariable String id){
         return taskService.getCollaboratedProjects(id);
     }
+    @GetMapping("dependency/{id}")
+    public List<Tasks> getDependency(@PathVariable String id){
+        return taskService.getDependency(id);
+    }
+    @GetMapping("checkForSubmit/{id}")
+    public  boolean checkForSubmit(@PathVariable String id){
+        List<Tasks> tasks = getDependency(id);
+        for(Tasks task : tasks){
+            if(task.getStatus() != "DONE"){
+                return  false;
+            }
+        }
+        return true;
+    }
+
 
     @PostMapping("collaboratedProject/add/{id}")
     public void addCollaboratedProject(@PathVariable String id, @RequestBody String projectId){
