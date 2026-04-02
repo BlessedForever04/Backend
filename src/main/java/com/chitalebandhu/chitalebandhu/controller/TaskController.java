@@ -198,8 +198,7 @@ public class TaskController {
 
     @GetMapping("getAllRemarks/{id}")
     public List<Remark> getAllRemarks(@PathVariable String id){
-        List<Remark> remarks = taskService.getAllremarks(id);
-        return remarks;
+        return taskService.getAllRemarks(id);
     }
 
 

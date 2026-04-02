@@ -121,7 +121,6 @@ public class TaskService {
             return null;
         }
 
-
         final Tasks task = existingTask.get();
         final String oldParentId = task.getParentId();
 
@@ -231,6 +230,13 @@ public class TaskService {
 
             task.setStatus("REVIEW");
             createTransitionActivity(task, actorId, "submitted for review in");
+        } else if ("TODO".equals(nextStatus) || "NOT_STARTED".equals(nextStatus)) {
+            if (!"REVIEW".equals(currentStatus)) {
+                throw new IllegalStateException("Task must be in REVIEW before moving back to TODO");
+            }
+
+            task.setStatus("TODO");
+            createTransitionActivity(task, actorId, "disapproved review for");
         } else if (DONE_STATUSES.contains(nextStatus)) {
             // Completion is allowed only from REVIEW and only by project owner or admin.
             if (!"REVIEW".equals(currentStatus)) {
@@ -240,7 +246,7 @@ public class TaskService {
             task.setStatus("DONE");
             createTransitionActivity(task, actorId, "approved completion for");
         } else {
-            throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW or DONE.");
+            throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW, TODO, or DONE.");
         }
 
         Tasks saved = taskRepository.save(task);
@@ -534,7 +540,7 @@ public class TaskService {
                 .orElse(actorId);
     }
 
-    public List<Remark> getAllremarks(String id) {
+    public List<Remark> getAllRemarks(String id) {
 
         Tasks task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No remarks found"));
