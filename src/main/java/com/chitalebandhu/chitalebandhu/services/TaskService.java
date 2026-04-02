@@ -89,22 +89,7 @@ public class TaskService {
     }
 
     public void deleteTaskById(String id){
-        Tasks existing = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
-
-        final String parentId = existing.getParentId();
-
-        List<Tasks> children = taskRepository.findByParentId(id);
-        if(!children.isEmpty()){
-            for (Tasks child : children) {
-                deleteTaskById(child.getId());
-            }
-        }
-        taskRepository.delete(existing);
-
-        if (parentId != null && !parentId.trim().isEmpty()) {
-            recalculateProjectStats(parentId);
-        }
+        deleteDescendantsByParentId(id);
     }
 
     public void updateProgress(String id, short progress){
@@ -396,6 +381,9 @@ public class TaskService {
         List<Tasks> toDelete = new ArrayList<>();
         queue.add(rootParentId);
 
+        Optional<Tasks> parent = taskRepository.findById(rootParentId);
+        parent.ifPresent(toDelete::add);
+
         while (!queue.isEmpty()) {
             String parentId = queue.removeFirst();
             List<Tasks> children = taskRepository.findByParentId(parentId);
@@ -415,8 +403,6 @@ public class TaskService {
             taskRepository.deleteAll(toDelete);
         }
     }
-
-
 
     public void removeCollaboratedProject(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
