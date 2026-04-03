@@ -36,6 +36,7 @@ public class OverdueSchedulerService {
 
         if (overdueTasks.isEmpty()) {
             logger.info("No overdue tasks found.");
+            logger.info("What the hell is this?");
             return;
         }
 

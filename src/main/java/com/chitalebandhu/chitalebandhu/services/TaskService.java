@@ -89,21 +89,7 @@ public class TaskService {
     }
 
     public void deleteTaskById(String id){
-        Tasks existing = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
-
-        final String parentId = existing.getParentId();
-
-        List<Tasks> children = getTasksByParentId(id);
-        for (Tasks child : children) {
-            deleteTaskById(child.getId());
-        }
-
-        taskRepository.delete(existing);
-
-        if (parentId != null && !parentId.trim().isEmpty()) {
-            recalculateProjectStats(parentId);
-        }
+        deleteDescendantsByParentId(id);
     }
 
     public void updateProgress(String id, short progress){
@@ -134,7 +120,6 @@ public class TaskService {
         if(existingTask.isEmpty()){
             return null;
         }
-
 
         final Tasks task = existingTask.get();
         final String oldParentId = task.getParentId();
@@ -245,6 +230,13 @@ public class TaskService {
 
             task.setStatus("REVIEW");
             createTransitionActivity(task, actorId, "submitted for review in");
+        } else if ("TODO".equals(nextStatus) || "NOT_STARTED".equals(nextStatus)) {
+            if (!"REVIEW".equals(currentStatus)) {
+                throw new IllegalStateException("Task must be in REVIEW before moving back to TODO");
+            }
+
+            task.setStatus("TODO");
+            createTransitionActivity(task, actorId, "disapproved review for");
         } else if (DONE_STATUSES.contains(nextStatus)) {
             // Completion is allowed only from REVIEW and only by project owner or admin.
             if (!"REVIEW".equals(currentStatus)) {
@@ -254,7 +246,7 @@ public class TaskService {
             task.setStatus("DONE");
             createTransitionActivity(task, actorId, "approved completion for");
         } else {
-            throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW or DONE.");
+            throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW, TODO, or DONE.");
         }
 
         Tasks saved = taskRepository.save(task);
@@ -276,7 +268,6 @@ public class TaskService {
     }
     public List<Tasks> getTasksByParentId(String parentId){
         List<Tasks> tasks = taskRepository.findByParentId(parentId);
-
         if(!tasks.isEmpty()){
             return tasks;
         }else {
@@ -395,6 +386,10 @@ public class TaskService {
         Deque<String> queue = new ArrayDeque<>();
         List<Tasks> toDelete = new ArrayList<>();
         queue.add(rootParentId);
+        activityRepository.deleteByProjectId(rootParentId);
+
+        Optional<Tasks> parent = taskRepository.findById(rootParentId);
+        parent.ifPresent(toDelete::add);
 
         while (!queue.isEmpty()) {
             String parentId = queue.removeFirst();
@@ -407,6 +402,7 @@ public class TaskService {
             for (Tasks child : children) {
                 if (child.getId() != null && !child.getId().trim().isEmpty()) {
                     queue.add(child.getId());
+                    activityRepository.deleteByProjectId(child.getId());
                 }
             }
         }
@@ -415,8 +411,6 @@ public class TaskService {
             taskRepository.deleteAll(toDelete);
         }
     }
-
-
 
     public void removeCollaboratedProject(String id, String projectId){
         Optional <Tasks> existingTask = taskRepository.findById(id);
@@ -546,7 +540,7 @@ public class TaskService {
                 .orElse(actorId);
     }
 
-    public List<Remark> getAllremarks(String id) {
+    public List<Remark> getAllRemarks(String id) {
 
         Tasks task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No remarks found"));
