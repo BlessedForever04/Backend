@@ -90,8 +90,8 @@ public class TaskService {
 
     public void deleteTaskById(String id){
         Tasks task = getTaskById(id);
+        Tasks parentTask = getTaskById(task.getParentId());
         if(!task.getParentId().isEmpty()){
-            Tasks parentTask = getTaskById(task.getParentId());
             if(Objects.equals(task.getStatus(), "NOT_STARTED") || Objects.equals(task.getStatus(), "REVIEW")){
                 parentTask.setRemainingTask(parentTask.getRemainingTask() - 1);
             }
@@ -99,6 +99,7 @@ public class TaskService {
                 parentTask.setCompletedTask(parentTask.getCompletedTask() - 1);
             }
         }
+        taskRepository.save(parentTask);
         deleteDescendantsByParentId(id);
     }
 
