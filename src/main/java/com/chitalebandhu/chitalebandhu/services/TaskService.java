@@ -25,6 +25,9 @@ public class TaskService {
     private final ActivityRepository activityRepository;
     private final MemberRepository memberRepository;
 
+    private static final String VISIBILITY_PROJECT = "PROJECT";
+    private static final String VISIBILITY_TASK = "TASK";
+
     public TaskService(
             TaskRepository taskRepository,
             ActivityRepository activityRepository,
@@ -33,6 +36,74 @@ public class TaskService {
         this.taskRepository = taskRepository;
         this.activityRepository = activityRepository;
         this.memberRepository = memberRepository;
+    }
+
+    private boolean isDeadlineCrossed(Tasks task) {
+        return task.getDeadline() != null && task.getDeadline().isBefore(java.time.LocalDate.now());
+    }
+
+    private String resolveProjectStatus(Tasks project) {
+        if (project.getProgress() >= 100) {
+            return "DONE";
+        }
+
+        if (isDeadlineCrossed(project)) {
+            return "OVERDUE";
+        }
+
+        if (project.getCompletedTask() == 0) {
+            return "NOT_STARTED";
+        }
+
+        return "IN_PROGRESS";
+    }
+
+    private String resolveTaskStatus(Tasks task) {
+        final String currentStatus = normalize(task.getStatus());
+
+        if (DONE_STATUSES.contains(currentStatus)) {
+            return "DONE";
+        }
+
+        if (isDeadlineCrossed(task)) {
+            return "OVERDUE";
+        }
+
+        if ("REVIEW".equals(currentStatus)) {
+            return "REVIEW";
+        }
+
+        return "IN_PROGRESS";
+    }
+
+    private void syncLifecycleStatus(Tasks task) {
+        if (task == null) {
+            return;
+        }
+
+        final String derivedStatus = "TASK".equals(normalize(task.getType()))
+                ? resolveTaskStatus(task)
+                : resolveProjectStatus(task);
+
+        task.setStatus(derivedStatus);
+    }
+
+    private Tasks syncAndPersistLifecycleStatus(Tasks task) {
+        syncLifecycleStatus(task);
+        return taskRepository.save(task);
+    }
+
+    private List<Tasks> syncAndPersistLifecycleStatus(List<Tasks> tasks) {
+        List<Tasks> refreshed = new ArrayList<>();
+        for (Tasks task : tasks) {
+            if (task.getId() != null && !task.getId().trim().isEmpty()) {
+                refreshed.add(syncAndPersistLifecycleStatus(taskRepository.findById(task.getId()).orElse(task)));
+            } else {
+                syncLifecycleStatus(task);
+                refreshed.add(task);
+            }
+        }
+        return refreshed;
     }
 
     public List<Tasks> getCollaboratedProjects(String id){
@@ -64,19 +135,34 @@ public class TaskService {
     public void addTask(Tasks task){
         if(task.getParentId() != null){
             toggleType(task.getParentId());
-        }
-        taskRepository.save(task);
 
-        if (task.getParentId() != null && !task.getParentId().trim().isEmpty()) {
-            recalculateProjectStats(task.getParentId());
+            Optional<Tasks> parentTaskOpt = taskRepository.findById(task.getParentId());
+            if (parentTaskOpt.isPresent()) {
+                Tasks parentTask = parentTaskOpt.get();
+                if (DONE_STATUSES.contains(normalize(parentTask.getStatus()))) {
+                    throw new IllegalStateException("Cannot add tasks to a completed project");
+                }
+            }
+        }
+        syncLifecycleStatus(task);
+        Tasks savedTask = taskRepository.save(task);
+
+        if ("PROJECT".equals(normalize(savedTask.getType()))) {
+            logActivity(savedTask, savedTask.getOwnerId(), "created project", VISIBILITY_PROJECT,
+                    savedTask.getId(), savedTask.getTitle());
+        }
+
+        if (savedTask.getParentId() != null && !savedTask.getParentId().trim().isEmpty()) {
+            recalculateProjectStats(savedTask.getParentId());
         }
     }
 
 
 
     public Tasks getTaskById(String id){
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+        Tasks task = taskRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Task not found"));
+        return syncAndPersistLifecycleStatus(task);
     }
 
     public long getCountByPriority(String priority){
@@ -85,7 +171,7 @@ public class TaskService {
 
     public List<Tasks> getTaskByOwnerId(String ownerId){
         Optional<List<Tasks>> tasks = taskRepository.findByOwnerId(ownerId);
-        return tasks.orElse(List.of());
+        return syncAndPersistLifecycleStatus(tasks.orElse(List.of()));
     }
 
     public void deleteTaskById(String id){
@@ -95,6 +181,14 @@ public class TaskService {
 
         Tasks task = getTaskById(id);
         String parentId = task.getParentId();
+        boolean isProjectRoot = "PROJECT".equals(normalize(task.getType()))
+            && (parentId == null || parentId.trim().isEmpty());
+
+        if (isProjectRoot) {
+            // Keep deletion activity visible to admins even after task hierarchy is removed.
+            logActivity(task, task.getOwnerId(), "deleted project", VISIBILITY_PROJECT,
+                null, task.getTitle());
+        }
 
         if (parentId != null && !parentId.trim().isEmpty()) {
             Optional<Tasks> parentTaskOpt = taskRepository.findById(parentId);
@@ -200,6 +294,8 @@ public class TaskService {
             task.setContributionPercent(newTask.getContributionPercent());
         }
 
+                syncLifecycleStatus(task);
+
       //  validateTaskForCreateOrUpdate(task);
 
         final Tasks saved = taskRepository.save(task);
@@ -233,6 +329,7 @@ public class TaskService {
         else{
             return;
         }
+        syncLifecycleStatus(existingTask.get());
         Tasks saved = taskRepository.save(existingTask.get());
         if (saved.getParentId() != null && !saved.getParentId().trim().isEmpty()) {
             recalculateProjectStats(saved.getParentId());
@@ -275,6 +372,8 @@ public class TaskService {
             throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW, TODO, or DONE.");
         }
 
+        syncLifecycleStatus(task);
+
         Tasks saved = taskRepository.save(task);
         if (saved.getParentId() != null && !saved.getParentId().trim().isEmpty()) {
             recalculateProjectStats(saved.getParentId());
@@ -286,7 +385,16 @@ public class TaskService {
      Optional<List<Tasks>> tasks = taskRepository.findByTypeOrIsProject("PROJECT" , true);
 
      if(tasks.isPresent()){
-         return tasks.get();
+         List<Tasks> refreshed = new ArrayList<>();
+         for (Tasks project : tasks.get()) {
+             if (project.getId() != null && !project.getId().trim().isEmpty()) {
+                 recalculateProjectStats(project.getId());
+                 taskRepository.findById(project.getId()).ifPresent(found -> refreshed.add(syncAndPersistLifecycleStatus(found)));
+             } else {
+                 refreshed.add(project);
+             }
+         }
+         return refreshed;
      }else {
          throw  new ResourceNotFoundException("No projects found");
      }
@@ -308,7 +416,22 @@ public class TaskService {
 
     public List<Tasks> getAllTasksByType(String type){
         Optional <List<Tasks>> allProjects = taskRepository.findByType(type);
-        return allProjects.orElse(List.of());
+        List<Tasks> tasks = allProjects.orElse(List.of());
+
+        if ("PROJECT".equals(normalize(type))) {
+            List<Tasks> refreshed = new ArrayList<>();
+            for (Tasks project : tasks) {
+                if (project.getId() != null && !project.getId().trim().isEmpty()) {
+                    recalculateProjectStats(project.getId());
+                    taskRepository.findById(project.getId()).ifPresent(found -> refreshed.add(syncAndPersistLifecycleStatus(found)));
+                } else {
+                    refreshed.add(project);
+                }
+            }
+            return refreshed;
+        }
+
+        return tasks;
     }
     // Pagination methods
     public Page<Tasks> getAllTasksByTypePaginated(String type, int page, int size) {
@@ -397,9 +520,19 @@ public class TaskService {
                 .mapToInt(Tasks::getContributionPercent)
                 .sum();
 
+        final String previousStatus = normalize(project.getStatus());
+
         project.setCompletedTask((int) completed);
         project.setRemainingTask((int) remaining);
         project.setProgress((short) Math.min(100, Math.max(0, completedContribution)));
+
+        syncLifecycleStatus(project);
+
+        final String nextStatus = normalize(project.getStatus());
+        if (!DONE_STATUSES.contains(previousStatus) && DONE_STATUSES.contains(nextStatus)) {
+            logActivity(project, project.getOwnerId(), "completed project", VISIBILITY_PROJECT,
+                    project.getId(), project.getTitle());
+        }
 
         taskRepository.save(project);
     }
@@ -510,8 +643,6 @@ public class TaskService {
 
     public void createTransitionActivity(Tasks task, String actorId, String verb) {
         try {
-            Activity activity = new Activity();
-
             String projectId = task.getParentId();
             String projectName = task.getTitle();
 
@@ -525,23 +656,56 @@ public class TaskService {
                 projectId = task.getId();
             }
 
+            final String visibility = "PROJECT".equals(normalize(task.getType()))
+                    ? VISIBILITY_PROJECT
+                    : VISIBILITY_TASK;
+            logActivity(task, actorId, verb, visibility, projectId, projectName);
+        } catch (Exception ignored) {
+            // Activity logging should not block the primary transition flow.
+        }
+    }
+
+    public void createOverdueActivity(Tasks task) {
+        if (task == null) {
+            return;
+        }
+
+        final String type = normalize(task.getType());
+        if ("PROJECT".equals(type)) {
+            logActivity(task, task.getOwnerId(), "project is overdue", VISIBILITY_PROJECT,
+                    task.getId(), task.getTitle());
+            return;
+        }
+
+        if ("TASK".equals(type)) {
+            String projectId = task.getParentId();
+            String projectName = task.getTitle();
+
+            if (projectId != null && !projectId.trim().isEmpty()) {
+                Optional<Tasks> projectOpt = taskRepository.findById(projectId);
+                if (projectOpt.isPresent()) {
+                    projectName = projectOpt.get().getTitle();
+                }
+            }
+
+            logActivity(task, task.getOwnerId(), "task is overdue in", VISIBILITY_TASK,
+                    projectId, projectName);
+        }
+    }
+
+    private void logActivity(Tasks task, String actorId, String verb, String visibility,
+                             String projectId, String projectName) {
+        try {
+            Activity activity = new Activity();
             activity.setProjectId(projectId);
             activity.setProjectName(projectName);
             activity.setVerb(verb);
             activity.setUserName(resolveActorName(actorId));
-            if("PROJECT".equals(normalize(task.getType()))){
-                activity.setVisibility("PROJECT");
-            }
-            else{
-                if("TASK".equals(normalize(task.getType()))){
-                    activity.setVisibility("TASK");
-                }
-            }
+            activity.setVisibility(visibility);
             activity.setTime();
-
             activityRepository.save(activity);
         } catch (Exception ignored) {
-            // Activity logging should not block the primary transition flow.
+            // Activity logging should not block the primary action.
         }
     }
 
