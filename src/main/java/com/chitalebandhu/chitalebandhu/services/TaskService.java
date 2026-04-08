@@ -708,7 +708,7 @@ public class TaskService {
             activity.setVerb(verb);
             activity.setUserName(resolveActorName(actorId));
             activity.setVisibility(visibility);
-            activity.setTime();
+            activity.setCurrentTimeUtc();
             activityRepository.save(activity);
         } catch (Exception ignored) {
             // Activity logging should not block the primary action.
