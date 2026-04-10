@@ -133,9 +133,9 @@ public class TaskService {
     }
 
     public void addTask(Tasks task){
+        //Validating if parent task is done or not
         if(task.getParentId() != null){
             toggleType(task.getParentId());
-
             Optional<Tasks> parentTaskOpt = taskRepository.findById(task.getParentId());
             if (parentTaskOpt.isPresent()) {
                 Tasks parentTask = parentTaskOpt.get();
@@ -145,14 +145,15 @@ public class TaskService {
             }
         }
         syncLifecycleStatus(task);
+        //Added new task
         Tasks savedTask = taskRepository.save(task);
 
-        if ("PROJECT".equals(normalize(savedTask.getType()))) {
+        //Creating activity if the added task is project
+        if ("PROJECT".equals(normalize(savedTask.getType()))){
             // Log project creation only when creator and owner are the same user.
             // This prevents admin-created projects from generating a creation activity.
             String creatorId = savedTask.getCreatorId();
             if (creatorId != null
-                    && creatorId.equals(savedTask.getOwnerId())
                     && !isAdminActor(creatorId)) {
                 logActivity(savedTask, creatorId, "created project", VISIBILITY_PROJECT,
                         savedTask.getId(), savedTask.getTitle());
