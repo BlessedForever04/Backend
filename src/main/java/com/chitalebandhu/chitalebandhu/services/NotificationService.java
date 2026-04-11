@@ -26,8 +26,19 @@ public class NotificationService {
         notificationRepository.save(newNotification);
     }
 
-    public void deleteNotificationById(String id){
-        notificationRepository.deleteById(id);
+    public void deleteNotificationByHelperId(String id){
+        notificationRepository.deleteByHelperId(id);
+    }
+
+    public void softDelete(String id){
+        Optional<Notification> notification = notificationRepository.findById(id);
+        if(notification.isPresent()){
+            notification.get().setDeleted(true);
+            notificationRepository.save(notification.get());
+        }
+        else{
+            throw new RuntimeException("NotificationService > softDelete > Notification not found!");
+        }
     }
 
     public void updateNotificationById(String id, Notification newNotification){
@@ -55,5 +66,9 @@ public class NotificationService {
         else{
             throw new RuntimeException("NotificationService > updateNotificationById > ExisitingNotification is not present");
         }
+    }
+
+    public boolean isNotificationAlreadySent(String taskId, String eventType){
+        return notificationRepository.existsByHelperIdAndEventType(taskId, eventType);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,8 @@ public interface TaskRepository extends MongoRepository<Tasks, String> {
 
     Optional <List<Tasks>> findByTypeOrIsProject(String Type , boolean isProject);
 
+    Optional<List<Tasks>> findByStartDateBetween(LocalDateTime start, LocalDateTime end);
+    Optional<List<Tasks>> findByDeadLineAfterAndStatusNot(LocalDateTime currentTime, String status);
 
     long countByType(String type);
 

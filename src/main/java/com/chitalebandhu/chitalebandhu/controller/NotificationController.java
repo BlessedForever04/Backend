@@ -18,6 +18,11 @@ public class NotificationController {
         return notificationService.getNotificationByUserId(id);
     }
 
+    @PutMapping("softDelete/{id}")
+    public void softDelete(@PathVariable String id){
+        notificationService.softDelete(id);
+    }
+
     @PostMapping("add")
     public void addNotification(@RequestBody Notification newNotification){
         notificationService.addNotification(newNotification);
@@ -26,10 +31,5 @@ public class NotificationController {
     @PutMapping("update/{id}")
     public void updateNotificationById(@PathVariable String id, @RequestBody Notification newNotification){
         notificationService.updateNotificationById(id, newNotification);
-    }
-
-    @DeleteMapping("delete/{id}")
-    public void deleteNotification(@PathVariable String id){
-        notificationService.deleteNotificationById(id);
     }
 }
