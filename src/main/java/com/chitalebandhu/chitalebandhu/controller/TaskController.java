@@ -1,11 +1,10 @@
 package com.chitalebandhu.chitalebandhu.controller;
 
 import com.chitalebandhu.chitalebandhu.DTOs.PagedResponse;
-import com.chitalebandhu.chitalebandhu.entity.Notification;
 import com.chitalebandhu.chitalebandhu.entity.Remark;
 import com.chitalebandhu.chitalebandhu.entity.Tasks;
 import com.chitalebandhu.chitalebandhu.services.TaskService;
-import com.chitalebandhu.chitalebandhu.services.OverdueSchedulerService;
+import com.chitalebandhu.chitalebandhu.services.SchedulerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,7 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
     @Autowired
-    private OverdueSchedulerService overdueSchedulerService;
+    private SchedulerService schedulerService;
 
     @GetMapping("count/{priority}")
     public long getCountByPriority(@PathVariable String priority){
@@ -239,7 +238,7 @@ public class TaskController {
     @PostMapping("check-overdue")
     public ResponseEntity<String> checkOverdueTasks() {
         try {
-            overdueSchedulerService.markOverdueTasks();
+            schedulerService.markOverdueTasks();
             return new ResponseEntity<>("Overdue check completed", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to check overdue tasks", HttpStatus.INTERNAL_SERVER_ERROR);

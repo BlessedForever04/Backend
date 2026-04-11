@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -165,22 +166,16 @@ public class TaskService {
         }
 
         //Send notification to creator
-        String message;
-
-        if(savedTask.getType().equals("TASK")){
-            message = "New Task '"+ savedTask.getTitle() + "' is assigned to you.";
-        }
-        else{
-            message = "New Project '"+ savedTask.getTitle() + "' is assigned to you.";
-        }
+        String type = (savedTask.getType().equals("TASK") ? "TASK" : "PROJECT");
 
         Notification newNotification = new Notification();
-        newNotification.setMessage(message);
+        newNotification.setMessage(type + " " + savedTask.getTitle() + " is assigned to you.");
         newNotification.setTime(java.time.LocalDateTime.now());
         newNotification.setUserId(savedTask.getOwnerId());
         newNotification.setIsRead(false);
         newNotification.setHelperId(savedTask.getId());
         newNotification.setEventType("NEW_TASK_CREATION");
+        newNotification.setDeleted(false);
 
         notificationService.addNotification(newNotification);
     }
@@ -369,9 +364,10 @@ public class TaskService {
     }
 
     public Tasks transitionTaskStatusWithReview(String id, String status, String actorId, String actorRole) {
+        Notification newNotification = new Notification();
         Tasks task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
-
+        Member member = memberRepository.findById(actorId).orElseThrow(() -> new ResourceNotFoundException("Member not found heree"));
         final String nextStatus = normalize(status);
         final String currentStatus = normalize(task.getStatus());
         final String role = normalize(actorRole);
@@ -382,15 +378,16 @@ public class TaskService {
 
         // Task owner can only move to REVIEW. It cannot self-complete to DONE.
         if ("REVIEW".equals(nextStatus)) {
-
             task.setStatus("REVIEW");
+            newNotification.setMessage((task.getType().equals("TASK") ? "TASK" : "PROJECT") + " '" + task.getTitle() + "' is sent to review by " + member.getName());
             createTransitionActivity(task, actorId, "submitted for review in");
-        } else if ("TODO".equals(nextStatus) || "NOT_STARTED".equals(nextStatus)) {
+        }
+        else if ("IN_PROGRESS".equals(nextStatus)) {
             if (!"REVIEW".equals(currentStatus)) {
                 throw new IllegalStateException("Task must be in REVIEW before moving back to TODO");
             }
-
-            task.setStatus("TODO");
+            task.setStatus("IN_PROGRESS");
+            newNotification.setMessage((task.getType().equals("TASK") ? "TASK" : "PROJECT") + " '" + task.getTitle() + "' is disapproved by " + member.getName());
             createTransitionActivity(task, actorId, "disapproved review for");
         } else if (DONE_STATUSES.contains(nextStatus)) {
             // Completion is allowed only from REVIEW and only by project owner or admin.
@@ -399,6 +396,7 @@ public class TaskService {
             }
 
             task.setStatus("DONE");
+            newNotification.setMessage((task.getType().equals("TASK") ? "TASK" : "PROJECT") + " '" + task.getTitle() + "' is approved by " + member.getName());
             createTransitionActivity(task, actorId, "approved completion for");
         } else {
             throw new IllegalStateException("Unsupported transition status: " + nextStatus + ". Use REVIEW, TODO, or DONE.");
@@ -411,8 +409,16 @@ public class TaskService {
             recalculateProjectStats(saved.getParentId());
         }
 
+        newNotification.setEventType("REVIEW_REQUEST");
+        newNotification.setTime(LocalDateTime.now());
+        newNotification.setUserId(actorId);
+        newNotification.setHelperId(id);
+        newNotification.setIsRead(false);
+        newNotification.setDeleted(false);
+        notificationService.addNotification(newNotification);
         return saved;
     }
+
     public List<Tasks> getAllProjects(){
      Optional<List<Tasks>> tasks = taskRepository.findByTypeOrIsProject("PROJECT" , true);
 
@@ -584,6 +590,7 @@ public class TaskService {
 
         while (!queue.isEmpty()) {
             String parentId = queue.removeFirst();
+            notificationService.deleteNotificationByHelperId(parentId);
             List<Tasks> children = taskRepository.findByParentId(parentId);
             if (children.isEmpty()) {
                 continue;
@@ -659,6 +666,7 @@ public class TaskService {
             newNotification.setIsRead(false);
             newNotification.setEventType("REMARK_SECTION");
             newNotification.setHelperId(existingTask.get().getId());
+            newNotification.setDeleted(false);
 
             notificationService.addNotification(newNotification);
         }

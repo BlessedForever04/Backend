@@ -8,4 +8,6 @@ import java.util.Optional;
 
 public interface NotificationRepository extends MongoRepository<Notification, String> {
     Optional<List<Notification>> findByUserId(String id);
+    boolean existsByHelperIdAndEventType(String HelperId, String EventType);
+    void deleteByHelperId(String helperId);
 }

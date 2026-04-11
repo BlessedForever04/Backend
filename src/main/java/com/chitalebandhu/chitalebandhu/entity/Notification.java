@@ -12,14 +12,17 @@ public class Notification {
     private String userId;
     private Boolean isRead;
     // event type decides which page to navigate
-    // evenTypes = NEW_TASK_CREATION, REMARK_SECTION, REVIEW_REQUEST, OVERDUE_WARNING, PROJECT_READY_TO_WORK
+    // evenTypes = NEW_TASK_CREATION, REMARK_SECTION, REVIEW_REQUEST, OVERDUE_WARNING, OVERDUE_ALERT, PROJECT_READY_TO_WORK, PROJECT_READY_TO_WORK_FUTURE
     // When eventType = NEW_TASK_CREATION, then navigate to the newly created project
     // when eventType = REMARK_SECTION, navigate to the remark page of the project where the notification came
-    // when eventType = OVERDUE_WARNING, navigate to the project / task detail page
-    // when eventType = PROEJCT_READY_TO_WORK, navigate to project /task detail page (When dependent tasks are completed, when start date is reached)
+    // when eventType = OVERDUE_WARNING, navigate to the project / task detail page - warning we get before the project / task reach deadline
+    // when eventType = OVERDUE_ALERT, navigate to the project / task detail page - Alert we get once task crosses deadline
+    // when eventType = PROEJECT_READY_TO_WORK, navigate to project /task detail page (When dependent tasks are completed, when start date is reached)
+    // when eventType = PROJECT_READY_TO_WORK_FUTURE, navigate to project / task detail page - This event is early notification that project will be starting in next x days
     private String eventType;
     // helper id will be the project's id where we'll navigate
     private String helperId;
+    private boolean isDeleted;
 
     public String getMessage() {
         return message;
@@ -67,5 +70,13 @@ public class Notification {
 
     public void setIsRead(Boolean read) {
         isRead = read;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 }
