@@ -22,6 +22,10 @@ public class NotificationService {
         }
     }
 
+    public int getUnreadNotificationCount(String userId){
+        return notificationRepository.countByUserIdAndIsRead(userId, false);
+    }
+
     public void addNotification(Notification newNotification){
         notificationRepository.save(newNotification);
     }

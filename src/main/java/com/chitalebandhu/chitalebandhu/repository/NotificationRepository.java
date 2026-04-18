@@ -11,4 +11,5 @@ public interface NotificationRepository extends MongoRepository<Notification, St
     Optional<List<Notification>> findByUserIdAndIsDeleted(String s, boolean bool);
     boolean existsByHelperIdAndEventType(String HelperId, String EventType);
     void deleteByHelperId(String helperId);
+    int countByUserIdAndIsRead(String userId, boolean isRead);
 }
