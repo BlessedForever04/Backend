@@ -18,7 +18,12 @@ public class NotificationController {
         return notificationService.getNotificationByUserId(id);
     }
 
-    @PutMapping("softDelete/{id}")
+    @GetMapping("unReadCount/{userId}")
+    public int getUnreadNotificationCount(@PathVariable String userId){
+        return notificationService.getUnreadNotificationCount(userId);
+    }
+
+    @DeleteMapping ("softDelete/{id}")
     public void softDelete(@PathVariable String id){
         notificationService.softDelete(id);
     }
