@@ -24,6 +24,5 @@ public class CBApplication {
 //	 };
 //	}
 
-	//just for fun
 }
 
